@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="description" content="Trip Details - Trip Tracker">
+    <meta name="theme-color" content="#2196F3">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="TripTracker">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/assets/images/icon-192.png">
+    <title>Trip Details - Trip Tracker</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/components.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="nav-sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h2>Trip Tracker</h2>
+            <button class="sidebar-close" id="sidebarClose" aria-label="Close sidebar">×</button>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="dashboard.html" class="nav-link">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                Dashboard
+            </a></li>
+            <li><a href="trips.html" class="nav-link active">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                Trips
+            </a></li>
+            <li><a href="reports.html" class="nav-link">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                Reports
+            </a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <span id="userName"></span>
+                <span class="user-role" id="userRole"></span>
+            </div>
+            <button class="btn btn-text" id="logoutBtn">Logout</button>
+        </div>
+    </nav>
+    
+    <!-- Bottom Navigation (Mobile) -->
+    <nav class="nav-bottom" id="bottomNav">
+        <a href="dashboard.html" class="nav-item">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+            <span>Dashboard</span>
+        </a>
+        <a href="trips.html" class="nav-item active">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            <span>Trips</span>
+        </a>
+        <a href="reports.html" class="nav-item">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+            <span>Reports</span>
+        </a>
+    </nav>
+    
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="page-header">
+            <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+            </button>
+            <a href="trips.html" class="back-link">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                Back
+            </a>
+            <h1>Trip Details</h1>
+            <div class="header-actions" id="headerActions">
+                <!-- Action buttons will be added here -->
+            </div>
+        </header>
+        
+        <div class="trip-detail-content">
+            <!-- Trip Status Badge -->
+            <div class="trip-status-section">
+                <span class="status-badge" id="tripStatusBadge"></span>
+            </div>
+            
+            <!-- Trip Information -->
+            <div class="info-card">
+                <h2>Trip Information</h2>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <label>Vehicle Number</label>
+                        <p id="detailVehicleNumber">-</p>
+                    </div>
+                    <div class="info-item">
+                        <label>Driver Name</label>
+                        <p id="detailDriverName">-</p>
+                    </div>
+                    <div class="info-item">
+                        <label>Trip Start Date</label>
+                        <p id="detailStartDate">-</p>
+                    </div>
+                    <div class="info-item">
+                        <label>Trip End Date</label>
+                        <p id="detailEndDate">-</p>
+                    </div>
+                    <div class="info-item">
+                        <label>Tonnage</label>
+                        <p id="detailTonnage">-</p>
+                    </div>
+                    <div class="info-item">
+                        <label>Rate per Ton</label>
+                        <p id="detailRatePerTon">-</p>
+                    </div>
+                </div>
+                <div class="info-item full-width">
+                    <label>Notes</label>
+                    <p id="detailNotes">-</p>
+                </div>
+            </div>
+            
+            <!-- Financial Summary -->
+            <div class="info-card">
+                <h2>Financial Summary</h2>
+                <div class="financial-grid">
+                    <div class="financial-item">
+                        <label>Revenue</label>
+                        <p class="amount" id="detailRevenue">₹0</p>
+                    </div>
+                    <div class="financial-item">
+                        <label>Advance Given</label>
+                        <p class="amount" id="detailAmountGiven">₹0</p>
+                    </div>
+                    <div class="financial-item">
+                        <label>Total Expenses</label>
+                        <p class="amount expense" id="detailTotalExpenses">₹0</p>
+                    </div>
+                    <div class="financial-item highlight">
+                        <label>Profit/Loss</label>
+                        <p class="amount" id="detailProfit">₹0</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Expenses Section -->
+            <div class="info-card" id="expensesCard">
+                <div class="card-header">
+                    <h2>Expenses</h2>
+                    <button class="btn btn-primary" id="addExpensesBtn" style="display: none;">Add Expenses</button>
+                    <button class="btn btn-secondary" id="editExpensesBtn" style="display: none;">Edit Expenses</button>
+                </div>
+                <div id="expensesList" class="expenses-list">
+                    <!-- Expenses will be displayed here -->
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Expense Modal -->
+    <div id="expenseModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add Expenses</h2>
+                <button class="modal-close" id="expenseModalClose">&times;</button>
+            </div>
+            <form id="expenseForm" class="modal-body">
+                <div class="form-group">
+                    <label for="actualEndDate">Actual Trip End Date *</label>
+                    <input type="date" id="actualEndDate" class="input" required>
+                </div>
+                
+                <div class="form-section">
+                    <h3>Expense Details</h3>
+                    <div class="form-group">
+                        <label for="expenseFood">Food Expenses (₹) *</label>
+                        <input type="number" id="expenseFood" class="input" step="1" min="0" value="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="expenseDiesel">Diesel Expenses (₹) *</label>
+                        <input type="number" id="expenseDiesel" class="input" step="1" min="0" value="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="expenseToll">Toll Expenses (₹) *</label>
+                        <input type="number" id="expenseToll" class="input" step="1" min="0" value="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="expenseSalary">Driver Salary (₹) *</label>
+                        <input type="number" id="expenseSalary" class="input" step="1" min="0" value="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="expenseGST">GST/Other Taxes (₹) *</label>
+                        <input type="number" id="expenseGST" class="input" step="1" min="0" value="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="expenseOther">Other Expenses (₹) *</label>
+                        <input type="number" id="expenseOther" class="input" step="1" min="0" value="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="expenseOtherDesc">Other Expenses Description</label>
+                        <textarea id="expenseOtherDesc" class="input" rows="2"></textarea>
+                    </div>
+                </div>
+                
+                <div class="expense-summary">
+                    <div class="summary-item">
+                        <label>Total Expenses</label>
+                        <p class="amount" id="expenseTotal">₹0</p>
+                    </div>
+                    <div class="summary-item">
+                        <label>Remaining Advance</label>
+                        <p class="amount" id="expenseRemaining">₹0</p>
+                    </div>
+                    <div class="summary-item highlight">
+                        <label>Estimated Profit</label>
+                        <p class="amount" id="expenseProfit">₹0</p>
+                    </div>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="cancelExpenseBtn">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Expenses</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Close Trip Confirmation Modal -->
+    <div id="closeTripModal" class="modal" style="display: none;">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h2>Close Trip</h2>
+                <button class="modal-close" id="closeTripModalClose">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to close this trip? This will calculate the final profit and mark the trip as completed.</p>
+                <div class="close-summary">
+                    <div class="summary-item">
+                        <label>Revenue</label>
+                        <p class="amount" id="closeRevenue">₹0</p>
+                    </div>
+                    <div class="summary-item">
+                        <label>Total Expenses</label>
+                        <p class="amount expense" id="closeExpenses">₹0</p>
+                    </div>
+                    <div class="summary-item highlight">
+                        <label>Final Profit</label>
+                        <p class="amount" id="closeProfit">₹0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancelCloseBtn">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmCloseBtn">Close Trip</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Toast Container -->
+    <div id="toastContainer" class="toast-container"></div>
+    
+    <script src="js/utils.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/calculations.js"></script>
+    <script src="js/trips.js"></script>
+    <script>
+        // Trip detail page specific script
+        const tripId = new URLSearchParams(window.location.search).get('id');
+        if (tripId) {
+            // Load trip details
+            window.currentTripId = tripId;
+        } else {
+            window.location.href = 'trips.html';
+        }
+    </script>
+    <script src="js/trip-detail.js"></script>
+    <script src="js/pwa.js"></script>
+</body>
+</html>
+

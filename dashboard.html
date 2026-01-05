@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="description" content="Dashboard - Trip Tracker">
+    <meta name="theme-color" content="#2196F3">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="TripTracker">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/assets/images/icon-192.png">
+    <title>Dashboard - Trip Tracker</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/components.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="nav-sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h2>Trip Tracker</h2>
+            <button class="sidebar-close" id="sidebarClose" aria-label="Close sidebar">×</button>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="dashboard.html" class="nav-link active">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                Dashboard
+            </a></li>
+            <li><a href="trips.html" class="nav-link">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                Trips
+            </a></li>
+            <li><a href="reports.html" class="nav-link">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                Reports
+            </a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <span id="userName"></span>
+                <span class="user-role" id="userRole"></span>
+            </div>
+            <button class="btn btn-text" id="logoutBtn">Logout</button>
+        </div>
+    </nav>
+    
+    <!-- Bottom Navigation (Mobile) -->
+    <nav class="nav-bottom" id="bottomNav">
+        <a href="dashboard.html" class="nav-item active">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+            <span>Dashboard</span>
+        </a>
+        <a href="trips.html" class="nav-item">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            <span>Trips</span>
+        </a>
+        <a href="reports.html" class="nav-item">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+            <span>Reports</span>
+        </a>
+    </nav>
+    
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="page-header">
+            <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+            </button>
+            <h1>Dashboard</h1>
+        </header>
+        
+        <div class="dashboard-content">
+            <!-- Metrics Cards -->
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-icon profit">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+                    </div>
+                    <div class="metric-content">
+                        <p class="metric-label">Monthly Profit</p>
+                        <h2 class="metric-value" id="monthlyProfit">₹0</h2>
+                        <p class="metric-change" id="monthlyProfitChange"></p>
+                    </div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-icon profit">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+                    </div>
+                    <div class="metric-content">
+                        <p class="metric-label">Yearly Profit</p>
+                        <h2 class="metric-value" id="yearlyProfit">₹0</h2>
+                        <p class="metric-change" id="yearlyProfitChange"></p>
+                    </div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-icon active">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    </div>
+                    <div class="metric-content">
+                        <p class="metric-label">Active Trips</p>
+                        <h2 class="metric-value" id="activeTrips">0</h2>
+                        <p class="metric-change">In progress</p>
+                    </div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-icon expense">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                    </div>
+                    <div class="metric-content">
+                        <p class="metric-label">Monthly Expenses</p>
+                        <h2 class="metric-value" id="monthlyExpenses">₹0</h2>
+                        <p class="metric-change">This month</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Charts Section -->
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <h3>Monthly Profit Trend</h3>
+                    <canvas id="monthlyProfitChart"></canvas>
+                </div>
+                
+                <div class="chart-card">
+                    <h3>Expense Breakdown</h3>
+                    <canvas id="expenseChart"></canvas>
+                </div>
+                
+                <div class="chart-card">
+                    <h3>Trip Status Distribution</h3>
+                    <canvas id="tripStatusChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Recent Trips -->
+            <div class="recent-trips">
+                <div class="section-header">
+                    <h2>Recent Trips</h2>
+                    <a href="trips.html" class="btn btn-text">View All</a>
+                </div>
+                <div id="recentTripsList" class="trips-list">
+                    <!-- Trips will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Toast Container -->
+    <div id="toastContainer" class="toast-container"></div>
+    
+    <script src="js/utils.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/calculations.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script src="js/pwa.js"></script>
+</body>
+</html>
+

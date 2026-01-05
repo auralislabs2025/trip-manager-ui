@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="description" content="Trips - Trip Tracker">
+    <meta name="theme-color" content="#2196F3">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="TripTracker">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/assets/images/icon-192.png">
+    <title>Trips - Trip Tracker</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/components.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="nav-sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h2>Trip Tracker</h2>
+            <button class="sidebar-close" id="sidebarClose" aria-label="Close sidebar">×</button>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="dashboard.html" class="nav-link">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                Dashboard
+            </a></li>
+            <li><a href="trips.html" class="nav-link active">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                Trips
+            </a></li>
+            <li><a href="reports.html" class="nav-link">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                Reports
+            </a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <span id="userName"></span>
+                <span class="user-role" id="userRole"></span>
+            </div>
+            <button class="btn btn-text" id="logoutBtn">Logout</button>
+        </div>
+    </nav>
+    
+    <!-- Bottom Navigation (Mobile) -->
+    <nav class="nav-bottom" id="bottomNav">
+        <a href="dashboard.html" class="nav-item">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+            <span>Dashboard</span>
+        </a>
+        <a href="trips.html" class="nav-item active">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            <span>Trips</span>
+        </a>
+        <a href="reports.html" class="nav-item">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+            <span>Reports</span>
+        </a>
+    </nav>
+    
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="page-header">
+            <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+            </button>
+            <h1>Trips</h1>
+            <button class="btn btn-primary" id="createTripBtn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                <span>New Trip</span>
+            </button>
+        </header>
+        
+        <div class="trips-content">
+            <!-- Filters -->
+            <div class="filters-section">
+                <div class="filter-group">
+                    <input type="text" id="searchInput" class="input" placeholder="Search trips...">
+                </div>
+                <div class="filter-group">
+                    <select id="statusFilter" class="input">
+                        <option value="">All Status</option>
+                        <option value="draft">Draft</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="returned">Returned</option>
+                        <option value="closed">Closed</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <input type="date" id="dateFromFilter" class="input">
+                </div>
+                <div class="filter-group">
+                    <input type="date" id="dateToFilter" class="input">
+                </div>
+                <button class="btn btn-secondary" id="clearFiltersBtn">Clear</button>
+            </div>
+            
+            <!-- Trips List -->
+            <div id="tripsList" class="trips-list">
+                <!-- Trips will be loaded here -->
+            </div>
+            
+            <!-- Empty State -->
+            <div id="emptyState" class="empty-state" style="display: none;">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                <h3>No trips found</h3>
+                <p>Create your first trip to get started</p>
+                <button class="btn btn-primary" id="createTripEmptyBtn">Create Trip</button>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Create/Edit Trip Modal -->
+    <div id="tripModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Create New Trip</h2>
+                <button class="modal-close" id="modalClose">&times;</button>
+            </div>
+            <form id="tripForm" class="modal-body">
+                <div class="form-section">
+                    <h3>Basic Information</h3>
+                    <div class="form-group">
+                        <label for="vehicleNumber">Vehicle Number *</label>
+                        <input type="text" id="vehicleNumber" class="input" required list="vehiclesList">
+                        <datalist id="vehiclesList"></datalist>
+                    </div>
+                    <div class="form-group">
+                        <label for="driverName">Driver Name *</label>
+                        <input type="text" id="driverName" class="input" required list="driversList">
+                        <datalist id="driversList"></datalist>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="tripStartDate">Trip Start Date *</label>
+                            <input type="date" id="tripStartDate" class="input" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="estimatedEndDate">Estimated End Date *</label>
+                            <input type="date" id="estimatedEndDate" class="input" required>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3>Financial Details</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="tonnage">Tonnage *</label>
+                            <input type="number" id="tonnage" class="input" step="0.1" min="0" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="ratePerTon">Rate per Ton (₹) *</label>
+                            <input type="number" id="ratePerTon" class="input" step="1" min="0" value="650" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="amountGiven">Advance Given (₹) *</label>
+                        <input type="number" id="amountGiven" class="input" step="1" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="revenue">Revenue (Auto-calculated)</label>
+                        <input type="text" id="revenue" class="input" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="notes">Notes</label>
+                        <textarea id="notes" class="input" rows="3"></textarea>
+                    </div>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Trip</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Toast Container -->
+    <div id="toastContainer" class="toast-container"></div>
+    
+    <script src="js/utils.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/calculations.js"></script>
+    <script src="js/trips.js"></script>
+    <script src="js/pwa.js"></script>
+</body>
+</html>
+
