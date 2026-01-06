@@ -173,17 +173,12 @@ function setupEventListeners() {
             const calculateRevenue = () => {
                 const tonnage = parseFloat(tonnageInput.value) || 0;
                 const rate = parseFloat(rateInput.value) || 0;
-                const advance = parseFloat(document.getElementById('amountGiven').value) || 0;
-                const revenue = calculations.calculateRevenue(tonnage, rate, advance);
+                // Revenue = Tonnage × Rate per Ton (advance is part of revenue, not added)
+                const revenue = calculations.calculateRevenue(tonnage, rate);
                 revenueInput.value = utils.formatCurrency(revenue);
             };
             
-            // Also recalculate when advance changes
-            const amountGivenInput = document.getElementById('amountGiven');
-            if (amountGivenInput) {
-                amountGivenInput.addEventListener('input', calculateRevenue);
-            }
-            
+            // Revenue only depends on tonnage and rate, not advance
             tonnageInput.addEventListener('input', calculateRevenue);
             rateInput.addEventListener('input', calculateRevenue);
         }

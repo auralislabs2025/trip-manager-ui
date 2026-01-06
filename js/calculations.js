@@ -1,13 +1,13 @@
 // Profit and Expense Calculations
 
-// Calculate revenue (includes advance given)
+// Calculate revenue (advance given is part of revenue, not added to it)
 function calculateRevenue(tonnage, ratePerTon, advanceGiven = 0) {
     if (!tonnage || !ratePerTon || isNaN(tonnage) || isNaN(ratePerTon)) {
         return 0;
     }
-    const baseRevenue = parseFloat(tonnage) * parseFloat(ratePerTon);
-    const advance = parseFloat(advanceGiven) || 0;
-    return baseRevenue + advance;
+    // Revenue is just tonnage × rate per ton
+    // Advance given is part of this revenue, not additional to it
+    return parseFloat(tonnage) * parseFloat(ratePerTon);
 }
 
 // Calculate total expenses

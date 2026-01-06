@@ -266,8 +266,9 @@ truckManagment/
 - **Section 2: Financial Details**
   - Tonnage (number input, decimal allowed)
   - Rate per Ton (number input, default ₹650, editable)
-  - Amount Given to Driver (number input)
-  - Revenue (auto-calculated: Tonnage × Rate)
+  - Advance Given (number input) - Part of revenue, given upfront to driver
+  - Revenue (auto-calculated: Tonnage × Rate per Ton)
+    - Note: Advance Given is part of the revenue, not added to it
   - Notes (textarea, optional)
 
 - **Validation:**
@@ -491,6 +492,7 @@ truckManagment/
 ```javascript
 revenue = tonnage × ratePerTon
 ```
+**Note:** Advance Given is part of the revenue (not added to it). For example, if revenue is ₹6,500 and advance given is ₹1,000, the advance is already included in the ₹6,500 revenue amount.
 
 #### Total Expenses Calculation
 ```javascript
