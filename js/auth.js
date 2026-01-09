@@ -92,7 +92,6 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
-            const role = document.getElementById('role').value;
             const errorMessage = document.getElementById('errorMessage');
             
             // Clear previous error
@@ -110,8 +109,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            // Attempt login
-            const result = login(username, password, role);
+            // Attempt login (default to admin role, fallback to user's actual role)
+            let result = login(username, password, 'admin');
+            
+            // If admin role fails, try without role validation (use user's actual role)
+            if (!result.success && result.message === 'Invalid role selected') {
+                result = login(username, password, null);
+            }
             
             if (result.success) {
                 // Redirect to dashboard
