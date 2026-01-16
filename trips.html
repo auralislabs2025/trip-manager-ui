@@ -120,7 +120,19 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h2 id="modalTitle">Create New Trip</h2>
-                <button class="modal-close" id="modalClose">&times;</button>
+                <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
+                    <button class="btn btn-secondary btn-past-trips" id="viewPastTripsBtn" title="View Past Trip Details">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                            <polyline points="10 9 9 9 8 9"></polyline>
+                        </svg>
+                        <span>Past Trip Details</span>
+                    </button>
+                    <button class="modal-close" id="modalClose">&times;</button>
+                </div>
             </div>
             <form id="tripForm" class="modal-body">
                 <div class="form-section">
@@ -143,6 +155,24 @@
                         <div class="form-group">
                             <label for="estimatedEndDate">Estimated End Date *</label>
                             <input type="date" id="estimatedEndDate" class="input" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="purchasePlace">Purchase Place *</label>
+                        <input type="text" id="purchasePlace" class="input" required placeholder="Enter purchase place">
+                    </div>
+                    <div class="form-group">
+                        <label for="itemName">Item Name (What truck is transporting) *</label>
+                        <input type="text" id="itemName" class="input" required placeholder="Enter item name">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="startingKm">Starting KM *</label>
+                            <input type="number" id="startingKm" class="input" step="0.1" min="0" required placeholder="0">
+                        </div>
+                        <div class="form-group">
+                            <label for="closingKm">Closing KM *</label>
+                            <input type="number" id="closingKm" class="input" step="0.1" min="0" required placeholder="0">
                         </div>
                     </div>
                 </div>
@@ -178,6 +208,57 @@
                     <button type="submit" class="btn btn-primary">Save Trip</button>
                 </div>
             </form>
+        </div>
+    </div>
+    
+    <!-- Past Trips Modal -->
+    <div id="pastTripsModal" class="modal" style="display: none;">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2>Past Trips Information</h2>
+                <button class="modal-close" id="pastTripsModalClose">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="past-trips-controls">
+                    <div class="search-box">
+                        <input type="text" id="pastTripsSearch" class="input" placeholder="Search trips...">
+                    </div>
+                    <div class="filter-box">
+                        <select id="pastTripsStatusFilter" class="input">
+                            <option value="">All Status</option>
+                            <option value="closed">Closed Only</option>
+                            <option value="returned">Returned</option>
+                            <option value="in_progress">In Progress</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="excel-grid-container">
+                    <table class="excel-grid" id="pastTripsTable">
+                        <thead>
+                            <tr>
+                                <th class="sortable sort-desc" data-sort="date">Date</th>
+                                <th class="sortable" data-sort="expense">Expense (₹)</th>
+                                <th class="sortable" data-sort="advance">Advance (₹)</th>
+                                <th class="sortable" data-sort="returnDate">Return Date</th>
+                                <th class="sortable" data-sort="purchasePlace">Purchase Place</th>
+                                <th class="sortable" data-sort="item">Item</th>
+                                <th class="sortable" data-sort="quantity">Quantity (Tons)</th>
+                                <th class="sortable" data-sort="rate">Rate/Ton (₹)</th>
+                                <th class="sortable" data-sort="profit">Profit (₹)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pastTripsTableBody">
+                            <!-- Trips will be loaded here -->
+                        </tbody>
+                    </table>
+                    <div id="pastTripsEmpty" class="empty-state" style="display: none;">
+                        <p>No past trips found</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="closePastTripsBtn">Close</button>
+            </div>
         </div>
     </div>
     

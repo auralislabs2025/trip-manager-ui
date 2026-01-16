@@ -616,3 +616,216 @@
     }
 }
 
+/* Past Trip Details Button */
+.btn-past-trips {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: var(--font-size-sm);
+    white-space: nowrap;
+}
+
+.btn-past-trips svg {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--spacing-base);
+}
+
+.modal-header h2 {
+    margin: 0;
+    flex: 1;
+}
+
+/* Modal Large */
+.modal-large {
+    max-width: 95vw;
+    max-height: 95vh;
+    width: 100%;
+}
+
+.modal-large .modal-body {
+    max-height: calc(95vh - 200px);
+    overflow-y: auto;
+}
+
+/* Past Trips Controls */
+.past-trips-controls {
+    display: flex;
+    gap: var(--spacing-base);
+    margin-bottom: var(--spacing-lg);
+    flex-wrap: wrap;
+}
+
+.search-box {
+    flex: 1;
+    min-width: 200px;
+}
+
+.filter-box {
+    min-width: 150px;
+}
+
+/* Excel-like Grid Container */
+.excel-grid-container {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: auto;
+    max-height: calc(95vh - 300px);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-base);
+    background-color: white;
+}
+
+/* Excel-like Grid Table */
+.excel-grid {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--font-size-sm);
+    background-color: white;
+    min-width: 1200px;
+}
+
+.excel-grid thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: #f0f0f0;
+}
+
+.excel-grid th {
+    padding: var(--spacing-sm) var(--spacing-base);
+    text-align: left;
+    font-weight: var(--font-weight-semibold);
+    background-color: #f0f0f0;
+    border: 1px solid #d0d0d0;
+    border-bottom: 2px solid #a0a0a0;
+    color: var(--color-text-primary);
+    font-size: var(--font-size-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    user-select: none;
+}
+
+.excel-grid th.sortable {
+    cursor: pointer;
+    position: relative;
+    padding-right: 24px;
+}
+
+.excel-grid th.sortable:hover {
+    background-color: #e0e0e0;
+}
+
+.excel-grid th.sortable::after {
+    content: '⇅';
+    position: absolute;
+    right: 8px;
+    font-size: 12px;
+    opacity: 0.5;
+}
+
+.excel-grid th.sortable.sort-asc::after {
+    content: '↑';
+    opacity: 1;
+}
+
+.excel-grid th.sortable.sort-desc::after {
+    content: '↓';
+    opacity: 1;
+}
+
+.excel-grid td {
+    padding: var(--spacing-sm) var(--spacing-base);
+    border: 1px solid #e0e0e0;
+    background-color: white;
+    color: var(--color-text-primary);
+    white-space: nowrap;
+}
+
+.excel-grid tbody tr {
+    transition: background-color var(--transition-fast);
+}
+
+.excel-grid tbody tr:hover {
+    background-color: #f8f8f8;
+}
+
+.excel-grid tbody tr:nth-child(even) {
+    background-color: #fafafa;
+}
+
+.excel-grid tbody tr:nth-child(even):hover {
+    background-color: #f0f0f0;
+}
+
+/* Excel Grid Cell Types */
+.excel-grid .cell-number {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.excel-grid .cell-date {
+    text-align: center;
+}
+
+.excel-grid .cell-text {
+    text-align: left;
+}
+
+.excel-grid .cell-profit-positive {
+    color: var(--color-success);
+    font-weight: var(--font-weight-semibold);
+}
+
+.excel-grid .cell-profit-negative {
+    color: var(--color-error);
+    font-weight: var(--font-weight-semibold);
+}
+
+/* Mobile Responsive for Excel Grid */
+@media (max-width: 768px) {
+    .modal-large {
+        max-width: 100vw;
+        max-height: 100vh;
+        margin: 0;
+        border-radius: 0;
+    }
+    
+    .modal-large .modal-body {
+        max-height: calc(100vh - 150px);
+        padding: var(--spacing-base);
+    }
+    
+    .past-trips-controls {
+        flex-direction: column;
+    }
+    
+    .search-box,
+    .filter-box {
+        width: 100%;
+        min-width: 100%;
+    }
+    
+    .excel-grid-container {
+        max-height: calc(100vh - 250px);
+    }
+    
+    .excel-grid {
+        font-size: var(--font-size-xs);
+    }
+    
+    .excel-grid th,
+    .excel-grid td {
+        padding: var(--spacing-xs) var(--spacing-sm);
+    }
+}
+

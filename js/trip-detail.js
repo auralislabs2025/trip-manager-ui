@@ -49,6 +49,10 @@ function displayTripInfo(trip) {
     document.getElementById('detailDriverName').textContent = trip.driverName || '-';
     document.getElementById('detailStartDate').textContent = utils.formatDate(trip.tripStartDate) || '-';
     document.getElementById('detailEndDate').textContent = utils.formatDate(trip.tripEndDate) || '-';
+    document.getElementById('detailPurchasePlace').textContent = trip.purchasePlace || '-';
+    document.getElementById('detailItemName').textContent = trip.itemName || '-';
+    document.getElementById('detailStartingKm').textContent = trip.startingKm !== undefined ? `${trip.startingKm} km` : '-';
+    document.getElementById('detailClosingKm').textContent = trip.closingKm !== undefined ? `${trip.closingKm} km` : '-';
     document.getElementById('detailTonnage').textContent = trip.tonnage ? `${trip.tonnage} tons` : '-';
     document.getElementById('detailRatePerTon').textContent = trip.ratePerTon ? utils.formatCurrency(trip.ratePerTon) : '-';
     document.getElementById('detailNotes').textContent = trip.notes || '-';

@@ -204,6 +204,46 @@ function setupEventListeners() {
             }
         });
     }
+    
+    // Past trips modal
+    const viewPastTripsBtn = document.getElementById('viewPastTripsBtn');
+    const pastTripsModal = document.getElementById('pastTripsModal');
+    const pastTripsModalClose = document.getElementById('pastTripsModalClose');
+    const closePastTripsBtn = document.getElementById('closePastTripsBtn');
+    const pastTripsSearch = document.getElementById('pastTripsSearch');
+    const pastTripsStatusFilter = document.getElementById('pastTripsStatusFilter');
+    
+    if (viewPastTripsBtn) {
+        viewPastTripsBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            openPastTripsModal();
+        });
+    }
+    
+    if (pastTripsModalClose) {
+        pastTripsModalClose.addEventListener('click', closePastTripsModal);
+    }
+    
+    if (closePastTripsBtn) {
+        closePastTripsBtn.addEventListener('click', closePastTripsModal);
+    }
+    
+    if (pastTripsModal) {
+        pastTripsModal.addEventListener('click', (e) => {
+            if (e.target === pastTripsModal) {
+                closePastTripsModal();
+            }
+        });
+    }
+    
+    if (pastTripsSearch) {
+        pastTripsSearch.addEventListener('input', utils.debounce(loadPastTrips, 300));
+    }
+    
+    if (pastTripsStatusFilter) {
+        pastTripsStatusFilter.addEventListener('change', loadPastTrips);
+    }
 }
 
 // Open trip modal
@@ -260,6 +300,10 @@ function loadTripForEdit(tripId) {
     document.getElementById('driverName').value = trip.driverName || '';
     document.getElementById('tripStartDate').value = trip.tripStartDate || '';
     document.getElementById('estimatedEndDate').value = trip.estimatedEndDate || '';
+    document.getElementById('purchasePlace').value = trip.purchasePlace || '';
+    document.getElementById('itemName').value = trip.itemName || '';
+    document.getElementById('startingKm').value = trip.startingKm || '';
+    document.getElementById('closingKm').value = trip.closingKm || '';
     document.getElementById('tonnage').value = trip.tonnage || '';
     document.getElementById('ratePerTon').value = trip.ratePerTon || '650';
     document.getElementById('amountGiven').value = trip.amountGivenToDriver || '';
@@ -279,6 +323,10 @@ function handleTripSubmit(e) {
         driverName: document.getElementById('driverName').value.trim(),
         tripStartDate: document.getElementById('tripStartDate').value,
         estimatedEndDate: document.getElementById('estimatedEndDate').value,
+        purchasePlace: document.getElementById('purchasePlace').value.trim(),
+        itemName: document.getElementById('itemName').value.trim(),
+        startingKm: parseFloat(document.getElementById('startingKm').value) || 0,
+        closingKm: parseFloat(document.getElementById('closingKm').value) || 0,
         tonnage: parseFloat(document.getElementById('tonnage').value),
         ratePerTon: parseFloat(document.getElementById('ratePerTon').value),
         amountGivenToDriver: parseFloat(document.getElementById('amountGiven').value),
@@ -286,13 +334,19 @@ function handleTripSubmit(e) {
     };
     
     // Validate
-    if (!formData.vehicleNumber || !formData.driverName || !formData.tripStartDate) {
+    if (!formData.vehicleNumber || !formData.driverName || !formData.tripStartDate || 
+        !formData.purchasePlace || !formData.itemName) {
         utils.showToast('Please fill in all required fields', 'error');
         return;
     }
     
     if (new Date(formData.estimatedEndDate) < new Date(formData.tripStartDate)) {
         utils.showToast('End date must be after start date', 'error');
+        return;
+    }
+    
+    if (formData.closingKm < formData.startingKm) {
+        utils.showToast('Closing KM must be greater than or equal to Starting KM', 'error');
         return;
     }
     
@@ -487,6 +541,195 @@ function setupNavigation() {
 // Add expenses function
 function addExpenses(tripId) {
     window.location.href = `trip-detail.html?id=${tripId}&action=expenses`;
+}
+
+// Past Trips Modal Functions
+let currentSortField = 'date'; // Default: sort by date
+let currentSortDirection = 'desc'; // Default: newest first
+
+function openPastTripsModal() {
+    const modal = document.getElementById('pastTripsModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        
+        // Reset sort to default
+        currentSortField = 'date';
+        currentSortDirection = 'desc';
+        
+        // Setup sortable columns (after modal is visible)
+        setTimeout(() => {
+            const sortableHeaders = document.querySelectorAll('.excel-grid th.sortable');
+            sortableHeaders.forEach(header => {
+                // Remove existing listeners by cloning
+                const newHeader = header.cloneNode(true);
+                header.parentNode.replaceChild(newHeader, header);
+                
+                // Set initial sort indicator
+                if (newHeader.getAttribute('data-sort') === currentSortField) {
+                    newHeader.classList.add(`sort-${currentSortDirection}`);
+                }
+                
+                // Add click listener
+                newHeader.addEventListener('click', () => {
+                    const sortField = newHeader.getAttribute('data-sort');
+                    toggleSort(sortField);
+                });
+            });
+        }, 100);
+        
+        loadPastTrips();
+    }
+}
+
+function closePastTripsModal() {
+    const modal = document.getElementById('pastTripsModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+function loadPastTrips() {
+    let trips = storage.TripStorage.getAll();
+    
+    // Filter by status if selected
+    const statusFilter = document.getElementById('pastTripsStatusFilter');
+    if (statusFilter && statusFilter.value) {
+        trips = trips.filter(trip => trip.status === statusFilter.value);
+    }
+    
+    // Filter by search term
+    const searchInput = document.getElementById('pastTripsSearch');
+    if (searchInput && searchInput.value.trim()) {
+        const searchTerm = searchInput.value.toLowerCase();
+        trips = trips.filter(trip => 
+            (trip.vehicleNumber && trip.vehicleNumber.toLowerCase().includes(searchTerm)) ||
+            (trip.driverName && trip.driverName.toLowerCase().includes(searchTerm)) ||
+            (trip.purchasePlace && trip.purchasePlace.toLowerCase().includes(searchTerm)) ||
+            (trip.itemName && trip.itemName.toLowerCase().includes(searchTerm)) ||
+            (trip.notes && trip.notes.toLowerCase().includes(searchTerm))
+        );
+    }
+    
+    // Sort trips
+    if (currentSortField) {
+        trips.sort((a, b) => {
+            let aVal = getSortValue(a, currentSortField);
+            let bVal = getSortValue(b, currentSortField);
+            
+            // Handle null/undefined values
+            if (aVal == null) aVal = '';
+            if (bVal == null) bVal = '';
+            
+            // Compare values
+            let comparison = 0;
+            if (typeof aVal === 'number' && typeof bVal === 'number') {
+                comparison = aVal - bVal;
+            } else {
+                comparison = String(aVal).localeCompare(String(bVal));
+            }
+            
+            return currentSortDirection === 'asc' ? comparison : -comparison;
+        });
+    } else {
+        // Default sort by date (newest first)
+        trips.sort((a, b) => {
+            const dateA = new Date(a.tripStartDate || a.createdAt || 0);
+            const dateB = new Date(b.tripStartDate || b.createdAt || 0);
+            return dateB - dateA;
+        });
+    }
+    
+    displayPastTrips(trips);
+}
+
+function getSortValue(trip, field) {
+    switch(field) {
+        case 'date':
+            return new Date(trip.tripStartDate || trip.createdAt || 0);
+        case 'expense':
+            return trip.totalExpenses || 0;
+        case 'advance':
+            return trip.amountGivenToDriver || 0;
+        case 'returnDate':
+            return trip.tripEndDate ? new Date(trip.tripEndDate) : null;
+        case 'purchasePlace':
+            return (trip.purchasePlace || '').toLowerCase();
+        case 'item':
+            return (trip.itemName || '').toLowerCase();
+        case 'quantity':
+            return trip.tonnage || 0;
+        case 'rate':
+            return trip.ratePerTon || 0;
+        case 'profit':
+            return trip.profit !== undefined ? trip.profit : 0;
+        default:
+            return '';
+    }
+}
+
+function toggleSort(field) {
+    const headers = document.querySelectorAll('.excel-grid th.sortable');
+    
+    if (currentSortField === field) {
+        // Toggle direction
+        currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+        // New field, default to desc
+        currentSortField = field;
+        currentSortDirection = 'desc';
+    }
+    
+    // Update header classes
+    headers.forEach(header => {
+        header.classList.remove('sort-asc', 'sort-desc');
+        if (header.getAttribute('data-sort') === field) {
+            header.classList.add(`sort-${currentSortDirection}`);
+        }
+    });
+    
+    loadPastTrips();
+}
+
+function displayPastTrips(trips) {
+    const tbody = document.getElementById('pastTripsTableBody');
+    const emptyState = document.getElementById('pastTripsEmpty');
+    
+    if (!tbody) return;
+    
+    if (trips.length === 0) {
+        tbody.innerHTML = '';
+        if (emptyState) emptyState.style.display = 'block';
+        return;
+    }
+    
+    if (emptyState) emptyState.style.display = 'none';
+    
+    tbody.innerHTML = trips.map(trip => {
+        const date = trip.tripStartDate ? utils.formatDate(trip.tripStartDate) : '-';
+        const expense = trip.totalExpenses || 0;
+        const advance = trip.amountGivenToDriver || 0;
+        const returnDate = trip.tripEndDate ? utils.formatDate(trip.tripEndDate) : '-';
+        const purchasePlace = trip.purchasePlace || '-';
+        const item = trip.itemName || '-';
+        const quantity = trip.tonnage || 0;
+        const rate = trip.ratePerTon || 0;
+        const profit = trip.profit !== undefined ? trip.profit : 0;
+        const profitClass = profit >= 0 ? 'cell-profit-positive' : 'cell-profit-negative';
+        
+        return `
+            <tr>
+                <td class="cell-date">${date}</td>
+                <td class="cell-number">${utils.formatCurrency(expense)}</td>
+                <td class="cell-number">${utils.formatCurrency(advance)}</td>
+                <td class="cell-date">${returnDate}</td>
+                <td class="cell-text">${purchasePlace}</td>
+                <td class="cell-text">${item}</td>
+                <td class="cell-number">${quantity.toFixed(1)}</td>
+                <td class="cell-number">${utils.formatCurrency(rate)}</td>
+                <td class="cell-number ${profitClass}">${utils.formatCurrency(profit)}</td>
+            </tr>
+        `;
+    }).join('');
 }
 
 // Make functions globally available
