@@ -57,7 +57,16 @@ function logout() {
 // Protect route - redirect to login if not authenticated
 function protectRoute() {
     if (!isAuthenticated()) {
-        window.location.href = 'index.html';
+        // Determine correct path to index.html based on current location
+        const currentPath = window.location.pathname;
+        let redirectPath = 'index.html';
+        
+        // If we're in a subdirectory, go up one level
+        if (currentPath.includes('/trips-table/') || currentPath.includes('\\trips-table\\')) {
+            redirectPath = '../index.html';
+        }
+        
+        window.location.href = redirectPath;
         return false;
     }
     return true;

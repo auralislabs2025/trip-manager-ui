@@ -1,0 +1,390 @@
+/* Excel-like Trips Table Styles */
+
+.trips-table-content {
+    padding: var(--spacing-lg);
+    max-width: 100%;
+    overflow: hidden;
+}
+
+/* Table Toolbar */
+.table-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--spacing-base);
+    margin-bottom: var(--spacing-lg);
+    padding: var(--spacing-base);
+    background-color: var(--color-surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    flex-wrap: wrap;
+}
+
+.toolbar-search {
+    flex: 1;
+    min-width: 200px;
+}
+
+.toolbar-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+/* Excel Table Container */
+.excel-table-container {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: auto;
+    max-height: calc(100vh - 300px);
+    border: 2px solid #d0d0d0;
+    border-radius: var(--radius-base);
+    background-color: white;
+    box-shadow: var(--shadow-md);
+}
+
+/* Excel Table */
+.excel-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--font-size-sm);
+    background-color: white;
+    min-width: 2000px;
+}
+
+.excel-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: #f0f0f0;
+}
+
+.excel-table th {
+    padding: var(--spacing-sm) var(--spacing-base);
+    text-align: left;
+    font-weight: var(--font-weight-semibold);
+    background-color: #f0f0f0;
+    border: 1px solid #d0d0d0;
+    border-bottom: 2px solid #a0a0a0;
+    color: var(--color-text-primary);
+    font-size: var(--font-size-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    position: relative;
+}
+
+.excel-table th.col-actions {
+    min-width: 100px;
+}
+
+.excel-table td {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border: 1px solid #e0e0e0;
+    background-color: white;
+    color: var(--color-text-primary);
+    white-space: nowrap;
+    position: relative;
+    min-height: 32px;
+    vertical-align: middle;
+}
+
+.excel-table tbody tr {
+    transition: background-color var(--transition-fast);
+}
+
+.excel-table tbody tr:hover {
+    background-color: #f8f8f8;
+}
+
+.excel-table tbody tr:nth-child(even) {
+    background-color: #fafafa;
+}
+
+.excel-table tbody tr:nth-child(even):hover {
+    background-color: #f0f0f0;
+}
+
+.excel-table tbody tr.editing {
+    background-color: #fff9e6;
+}
+
+.excel-table tbody tr.new-row {
+    background-color: #e8f5e9;
+}
+
+/* Editable Cells */
+.excel-table td.editable {
+    cursor: text;
+    position: relative;
+}
+
+.excel-table td.editable:hover {
+    background-color: #f0f7ff;
+}
+
+.excel-table td.editing {
+    padding: 0;
+    background-color: white;
+}
+
+.excel-table td.editing input,
+.excel-table td.editing select {
+    width: 100%;
+    height: 100%;
+    border: 2px solid var(--color-primary);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: var(--font-size-sm);
+    font-family: inherit;
+    background-color: white;
+    outline: none;
+}
+
+.excel-table td.editing input:focus,
+.excel-table td.editing select:focus {
+    border-color: var(--color-primary-dark);
+    box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
+}
+
+/* Cell Content Types */
+.excel-table .cell-text {
+    text-align: left;
+}
+
+.excel-table .cell-number {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.excel-table .cell-date {
+    text-align: center;
+}
+
+.excel-table .cell-profit-positive {
+    color: var(--color-success);
+    font-weight: var(--font-weight-semibold);
+}
+
+.excel-table .cell-profit-negative {
+    color: var(--color-error);
+    font-weight: var(--font-weight-semibold);
+}
+
+/* Dropdown in Cells */
+.excel-table td select {
+    width: 100%;
+    border: none;
+    background: transparent;
+    padding: var(--spacing-xs);
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+    outline: none;
+}
+
+.excel-table td select:hover {
+    background-color: #f0f7ff;
+}
+
+.excel-table td select:focus {
+    background-color: white;
+    border: 1px solid var(--color-primary);
+    border-radius: var(--radius-sm);
+}
+
+/* Expense Multi-Select Cell */
+.expense-multiselect {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs);
+    border-radius: var(--radius-sm);
+    transition: background-color var(--transition-fast);
+}
+
+.expense-multiselect:hover {
+    background-color: #f0f7ff;
+}
+
+.expense-multiselect select {
+    flex: 1;
+    min-width: 120px;
+}
+
+.expense-multiselect .btn-enter-amounts {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: var(--font-size-xs);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* Action Buttons in Cells */
+.cell-actions {
+    display: flex;
+    gap: var(--spacing-xs);
+    justify-content: center;
+    align-items: center;
+}
+
+.btn-cell-action {
+    padding: var(--spacing-xs);
+    min-width: auto;
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-xs);
+}
+
+.btn-cell-action svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* Master Data Modal */
+#masterDataModal .modal-content {
+    max-width: 500px;
+}
+
+#masterDataModal .form-group {
+    margin-bottom: var(--spacing-lg);
+}
+
+/* Expense Breakdown Modal */
+#expenseBreakdownModal .modal-content {
+    max-width: 600px;
+}
+
+.expense-breakdown-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-base);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.expense-breakdown-item:last-child {
+    border-bottom: none;
+}
+
+.expense-breakdown-item label {
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+    flex: 1;
+}
+
+.expense-breakdown-item input {
+    width: 150px;
+    text-align: right;
+}
+
+.expense-total-section {
+    margin-top: var(--spacing-lg);
+    padding-top: var(--spacing-lg);
+    border-top: 2px solid var(--color-border);
+}
+
+.expense-total-section .total-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-base);
+    background-color: var(--color-background);
+    border-radius: var(--radius-base);
+}
+
+.expense-total-section .total-item label {
+    font-weight: var(--font-weight-semibold);
+    font-size: var(--font-size-lg);
+}
+
+.expense-total-section .total-item .amount {
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-primary);
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: var(--spacing-3xl) var(--spacing-lg);
+    color: var(--color-text-secondary);
+}
+
+.empty-state svg {
+    margin-bottom: var(--spacing-lg);
+    opacity: 0.5;
+}
+
+.empty-state h3 {
+    margin-bottom: var(--spacing-sm);
+    color: var(--color-text-primary);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .trips-table-content {
+        padding: var(--spacing-base);
+    }
+    
+    .table-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .toolbar-search {
+        width: 100%;
+    }
+    
+    .excel-table-container {
+        max-height: calc(100vh - 250px);
+    }
+    
+    .excel-table {
+        font-size: var(--font-size-xs);
+    }
+    
+    .excel-table th,
+    .excel-table td {
+        padding: var(--spacing-xs);
+    }
+    
+    .excel-table th {
+        font-size: 10px;
+    }
+    
+    .expense-multiselect {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .expense-multiselect .btn-enter-amounts {
+        width: 100%;
+    }
+}
+
+/* Loading State */
+.excel-table tbody tr.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/* Error State */
+.excel-table tbody tr.error {
+    background-color: #ffebee;
+}
+
+.excel-table td.error {
+    border-color: var(--color-error);
+    background-color: #ffebee;
+}
+
+/* Success State */
+.excel-table tbody tr.saved {
+    animation: flashGreen 0.5s ease;
+}
+
+@keyframes flashGreen {
+    0% { background-color: #e8f5e9; }
+    100% { background-color: transparent; }
+}
+
