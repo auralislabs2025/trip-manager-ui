@@ -176,7 +176,7 @@ function createExpenseMultiSelect(selectedExpenses, tripId) {
             <select class="expense-select" multiple data-trip-id="${tripId}" onchange="handleExpenseSelectChange(this, '${tripId}')" size="3" onclick="event.stopPropagation();">
                 ${options}
             </select>
-            <button class="btn btn-enter-amounts btn-primary" onclick="event.stopPropagation(); openExpenseBreakdown('${tripId}')" style="margin-left: 4px;">Enter Amounts</button>
+            <button class="btn btn-enter-amounts btn-primary desktop-only" onclick="event.stopPropagation(); openExpenseBreakdown('${tripId}')" style="margin-left: 4px;">Enter Amounts</button>
         </div>
     `;
 }
