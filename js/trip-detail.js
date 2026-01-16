@@ -245,6 +245,7 @@ function openExpenseModal() {
     if (currentTrip && currentTrip.expenses) {
         // Edit mode - load existing expenses
         document.getElementById('actualEndDate').value = currentTrip.tripEndDate || '';
+        document.getElementById('closingKm').value = currentTrip.closingKm || '';
         document.getElementById('expenseFood').value = currentTrip.expenses.food || 0;
         document.getElementById('expenseDiesel').value = currentTrip.expenses.diesel || 0;
         document.getElementById('expenseToll').value = currentTrip.expenses.toll || 0;
@@ -255,6 +256,7 @@ function openExpenseModal() {
     } else {
         // New mode
         document.getElementById('actualEndDate').value = currentTrip?.tripEndDate || utils.getTodayDate();
+        document.getElementById('closingKm').value = currentTrip?.closingKm || '';
         document.getElementById('expenseFood').value = 0;
         document.getElementById('expenseDiesel').value = 0;
         document.getElementById('expenseToll').value = 0;
@@ -315,6 +317,7 @@ function handleExpenseSubmit(e) {
     };
     
     const actualEndDate = document.getElementById('actualEndDate').value;
+    const closingKm = parseFloat(document.getElementById('closingKm').value) || 0;
     
     if (!actualEndDate) {
         utils.showToast('Please enter actual trip end date', 'error');
@@ -323,6 +326,17 @@ function handleExpenseSubmit(e) {
     
     if (new Date(actualEndDate) < new Date(currentTrip.tripStartDate)) {
         utils.showToast('End date must be after start date', 'error');
+        return;
+    }
+    
+    if (!closingKm || closingKm <= 0) {
+        utils.showToast('Please enter closing KM', 'error');
+        return;
+    }
+    
+    const startingKm = currentTrip.startingKm || 0;
+    if (closingKm < startingKm) {
+        utils.showToast('Closing KM must be greater than or equal to Starting KM', 'error');
         return;
     }
     
@@ -335,6 +349,7 @@ function handleExpenseSubmit(e) {
     currentTrip.totalExpenses = totalExpenses;
     currentTrip.profit = profit;
     currentTrip.tripEndDate = actualEndDate;
+    currentTrip.closingKm = closingKm;
     
     // If trip was in progress, mark as returned
     if (currentTrip.status === 'in_progress') {

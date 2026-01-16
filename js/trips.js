@@ -303,7 +303,6 @@ function loadTripForEdit(tripId) {
     document.getElementById('purchasePlace').value = trip.purchasePlace || '';
     document.getElementById('itemName').value = trip.itemName || '';
     document.getElementById('startingKm').value = trip.startingKm || '';
-    document.getElementById('closingKm').value = trip.closingKm || '';
     document.getElementById('tonnage').value = trip.tonnage || '';
     document.getElementById('ratePerTon').value = trip.ratePerTon || '650';
     document.getElementById('amountGiven').value = trip.amountGivenToDriver || '';
@@ -326,7 +325,6 @@ function handleTripSubmit(e) {
         purchasePlace: document.getElementById('purchasePlace').value.trim(),
         itemName: document.getElementById('itemName').value.trim(),
         startingKm: parseFloat(document.getElementById('startingKm').value) || 0,
-        closingKm: parseFloat(document.getElementById('closingKm').value) || 0,
         tonnage: parseFloat(document.getElementById('tonnage').value),
         ratePerTon: parseFloat(document.getElementById('ratePerTon').value),
         amountGivenToDriver: parseFloat(document.getElementById('amountGiven').value),
@@ -342,11 +340,6 @@ function handleTripSubmit(e) {
     
     if (new Date(formData.estimatedEndDate) < new Date(formData.tripStartDate)) {
         utils.showToast('End date must be after start date', 'error');
-        return;
-    }
-    
-    if (formData.closingKm < formData.startingKm) {
-        utils.showToast('Closing KM must be greater than or equal to Starting KM', 'error');
         return;
     }
     
