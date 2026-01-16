@@ -646,6 +646,10 @@ function getSortValue(trip, field) {
     switch(field) {
         case 'date':
             return new Date(trip.tripStartDate || trip.createdAt || 0);
+        case 'vehicle':
+            return (trip.vehicleNumber || '').toLowerCase();
+        case 'driver':
+            return (trip.driverName || '').toLowerCase();
         case 'expense':
             return trip.totalExpenses || 0;
         case 'advance':
@@ -706,6 +710,8 @@ function displayPastTrips(trips) {
     
     tbody.innerHTML = trips.map(trip => {
         const date = trip.tripStartDate ? utils.formatDate(trip.tripStartDate) : '-';
+        const vehicle = trip.vehicleNumber || '-';
+        const driver = trip.driverName || '-';
         const expense = trip.totalExpenses || 0;
         const advance = trip.amountGivenToDriver || 0;
         const returnDate = trip.tripEndDate ? utils.formatDate(trip.tripEndDate) : '-';
@@ -719,6 +725,8 @@ function displayPastTrips(trips) {
         return `
             <tr>
                 <td class="cell-date">${date}</td>
+                <td class="cell-text">${vehicle}</td>
+                <td class="cell-text">${driver}</td>
                 <td class="cell-number">${utils.formatCurrency(expense)}</td>
                 <td class="cell-number">${utils.formatCurrency(advance)}</td>
                 <td class="cell-date">${returnDate}</td>
