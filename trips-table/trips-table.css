@@ -6,6 +6,49 @@
     overflow: hidden;
 }
 
+/* Status Legend */
+.status-legend {
+    display: flex;
+    gap: var(--spacing-lg);
+    align-items: center;
+    padding: var(--spacing-base) var(--spacing-lg);
+    margin-bottom: var(--spacing-base);
+    background-color: var(--color-surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    flex-wrap: wrap;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.legend-color {
+    width: 16px;
+    height: 16px;
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    display: inline-block;
+}
+
+.legend-draft {
+    background-color: #fff3cd;
+    border-color: #ffc107;
+}
+
+.legend-closed {
+    background-color: #d1e7dd;
+    border-color: #198754;
+}
+
+.legend-text {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-medium);
+}
+
 /* Table Toolbar */
 .table-toolbar {
     display: flex;
@@ -48,7 +91,7 @@
     border-collapse: collapse;
     font-size: var(--font-size-sm);
     background-color: white;
-    min-width: 2000px;
+    min-width: 2200px;
 }
 
 .excel-table thead {
@@ -73,8 +116,69 @@
     position: relative;
 }
 
+/* Group visual separation for better understanding */
+.excel-table th.col-row-number {
+    background-color: #e8e8e8;
+    border-right: 2px solid #b0b0b0;
+}
+
+.excel-table th.col-start-date {
+    border-left: 2px solid #b0b0b0;
+}
+
+.excel-table th.col-expected-end-date {
+    border-right: 2px solid #b0b0b0;
+}
+
+.excel-table th.col-vehicle {
+    border-left: 2px solid #b0b0b0;
+}
+
+.excel-table th.col-partner {
+    border-right: 2px solid #b0b0b0;
+}
+
+.excel-table th.col-purchase-place {
+    border-left: 2px solid #b0b0b0;
+}
+
+.excel-table th.col-item {
+    border-right: 2px solid #b0b0b0;
+}
+
+.excel-table th.col-starting-km {
+    border-left: 2px solid #b0b0b0;
+}
+
+.excel-table th.col-closing-km {
+    border-right: 2px solid #b0b0b0;
+}
+
+.excel-table th.col-tonnage {
+    border-left: 2px solid #b0b0b0;
+}
+
+.excel-table th.col-rate {
+    border-right: 2px solid #b0b0b0;
+}
+
+.excel-table th.col-advance {
+    border-left: 2px solid #b0b0b0;
+}
+
+.excel-table th.col-actions {
+    border-left: 2px solid #b0b0b0;
+}
+
 .excel-table th.col-actions {
     min-width: 100px;
+}
+
+.excel-table th.col-row-number,
+.excel-table td.col-row-number {
+    min-width: 50px;
+    text-align: center;
+    font-weight: var(--font-weight-medium);
 }
 
 .excel-table td {
@@ -92,15 +196,27 @@
     transition: background-color var(--transition-fast);
 }
 
-.excel-table tbody tr:hover {
+.excel-table tbody tr:hover:not(.row-draft):not(.row-closed) {
     background-color: #f8f8f8;
 }
 
-.excel-table tbody tr:nth-child(even) {
+.excel-table tbody tr:hover:not(.row-draft):not(.row-closed) td {
+    background-color: #f8f8f8;
+}
+
+.excel-table tbody tr:nth-child(even):not(.row-draft):not(.row-closed) {
     background-color: #fafafa;
 }
 
-.excel-table tbody tr:nth-child(even):hover {
+.excel-table tbody tr:nth-child(even):not(.row-draft):not(.row-closed):hover {
+    background-color: #f0f0f0;
+}
+
+.excel-table tbody tr:nth-child(even):not(.row-draft):not(.row-closed) td {
+    background-color: #fafafa;
+}
+
+.excel-table tbody tr:nth-child(even):not(.row-draft):not(.row-closed):hover td {
     background-color: #f0f0f0;
 }
 
@@ -122,6 +238,100 @@
 
 .excel-table tbody tr.new-row {
     background-color: #e8f5e9;
+}
+
+/* Locked row styling - Prevent editing visual indicator */
+.excel-table tbody tr.row-locked td.editable {
+    cursor: not-allowed !important;
+    opacity: 0.9;
+    position: relative;
+}
+
+.excel-table tbody tr.row-locked td.editable::after {
+    content: '🔒';
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 10px;
+    opacity: 0.3;
+    pointer-events: none;
+}
+
+.excel-table tbody tr.row-locked td.editable:hover {
+    background-color: inherit !important;
+}
+
+.excel-table tbody tr.row-locked select {
+    pointer-events: none;
+    opacity: 0.8;
+}
+
+/* Edit button styling */
+.btn-edit {
+    background-color: #0d6efd;
+    color: white;
+}
+
+.btn-edit:hover {
+    background-color: #0b5ed7;
+}
+
+/* Status-based row styling - Apply to entire row including all cells */
+.excel-table tbody tr.row-draft {
+    background-color: #fff3cd !important;
+}
+
+.excel-table tbody tr.row-draft td {
+    background-color: #fff3cd !important;
+}
+
+.excel-table tbody tr.row-draft:nth-child(even) {
+    background-color: #fff9e6 !important;
+}
+
+.excel-table tbody tr.row-draft:nth-child(even) td {
+    background-color: #fff9e6 !important;
+}
+
+.excel-table tbody tr.row-draft:hover {
+    background-color: #ffeeba !important;
+}
+
+.excel-table tbody tr.row-draft:hover td {
+    background-color: #ffeeba !important;
+}
+
+.excel-table tbody tr.row-closed {
+    background-color: #d1e7dd !important;
+}
+
+.excel-table tbody tr.row-closed td {
+    background-color: #d1e7dd !important;
+}
+
+.excel-table tbody tr.row-closed:nth-child(even) {
+    background-color: #d4edda !important;
+}
+
+.excel-table tbody tr.row-closed:nth-child(even) td {
+    background-color: #d4edda !important;
+}
+
+.excel-table tbody tr.row-closed:hover {
+    background-color: #c3e6cb !important;
+}
+
+.excel-table tbody tr.row-closed:hover td {
+    background-color: #c3e6cb !important;
+}
+
+/* Ensure row number and action cells also get the color */
+.excel-table tbody tr.row-draft td.cell-row-number,
+.excel-table tbody tr.row-draft td.cell-actions,
+.excel-table tbody tr.row-closed td.cell-row-number,
+.excel-table tbody tr.row-closed td.cell-actions {
+    background-color: inherit !important;
 }
 
 /* Editable Cells */
@@ -402,7 +612,7 @@
     
     .excel-table {
         font-size: var(--font-size-sm);
-        min-width: 1800px;
+        min-width: 2000px;
     }
     
     .excel-table th {
@@ -433,15 +643,24 @@
     }
     
     /* Optimize column widths for tablet */
-    .excel-table th.col-date,
-    .excel-table td.col-date {
+    .excel-table th.col-row-number,
+    .excel-table td.col-row-number {
+        min-width: 40px;
+    }
+    
+    .excel-table th.col-start-date,
+    .excel-table td.col-start-date,
+    .excel-table th.col-expected-end-date,
+    .excel-table td.col-expected-end-date {
         min-width: 100px;
     }
     
     .excel-table th.col-vehicle,
     .excel-table td.col-vehicle,
     .excel-table th.col-driver,
-    .excel-table td.col-driver {
+    .excel-table td.col-driver,
+    .excel-table th.col-partner,
+    .excel-table td.col-partner {
         min-width: 120px;
     }
     
@@ -501,6 +720,20 @@
         max-width: 100%;
     }
     
+    .status-legend {
+        padding: var(--spacing-sm) var(--spacing-base);
+        gap: var(--spacing-base);
+    }
+    
+    .legend-item {
+        font-size: var(--font-size-xs);
+    }
+    
+    .legend-color {
+        width: 14px;
+        height: 14px;
+    }
+    
     .page-header {
         padding: var(--spacing-sm) var(--spacing-base);
         flex-wrap: wrap;
@@ -554,7 +787,7 @@
     
     .excel-table {
         font-size: var(--font-size-xs);
-        min-width: 1400px;
+        min-width: 1600px;
         width: max-content;
         table-layout: auto;
     }
@@ -588,8 +821,13 @@
         background-color: #f0f0f0;
     }
     
-    .excel-table tbody tr:nth-child(even) td.col-actions {
+    .excel-table tbody tr:nth-child(even):not(.row-draft):not(.row-closed) td.col-actions {
         background-color: #fafafa;
+    }
+    
+    .excel-table tbody tr.row-draft td.col-actions,
+    .excel-table tbody tr.row-closed td.col-actions {
+        background-color: inherit !important;
     }
     
     .btn-cell-action {
@@ -605,15 +843,43 @@
     }
     
     /* Compact column widths for mobile */
-    .excel-table th.col-date,
-    .excel-table td.col-date {
+    .excel-table th.col-row-number,
+    .excel-table td.col-row-number {
+        min-width: 35px;
+        position: sticky;
+        left: 0;
+        background-color: white;
+        z-index: 5;
+        box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .excel-table thead th.col-row-number {
+        z-index: 15;
+        background-color: #f0f0f0;
+    }
+    
+    .excel-table tbody tr:nth-child(even):not(.row-draft):not(.row-closed) td.col-row-number {
+        background-color: #fafafa;
+    }
+    
+    .excel-table tbody tr.row-draft td.col-row-number,
+    .excel-table tbody tr.row-closed td.col-row-number {
+        background-color: inherit !important;
+    }
+    
+    .excel-table th.col-start-date,
+    .excel-table td.col-start-date,
+    .excel-table th.col-expected-end-date,
+    .excel-table td.col-expected-end-date {
         min-width: 80px;
     }
     
     .excel-table th.col-vehicle,
     .excel-table td.col-vehicle,
     .excel-table th.col-driver,
-    .excel-table td.col-driver {
+    .excel-table td.col-driver,
+    .excel-table th.col-partner,
+    .excel-table td.col-partner {
         min-width: 90px;
     }
     
@@ -792,5 +1058,138 @@
 @keyframes flashGreen {
     0% { background-color: #e8f5e9; }
     100% { background-color: transparent; }
+}
+
+/* Pagination Styles */
+.pagination-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-base) var(--spacing-lg);
+    margin-top: var(--spacing-lg);
+    background-color: var(--color-surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    flex-wrap: wrap;
+    gap: var(--spacing-base);
+}
+
+.pagination-info {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-base);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-primary);
+}
+
+.pagination-info .input-sm {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: var(--font-size-sm);
+    min-width: 120px;
+}
+
+.pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.pagination-numbers {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.pagination-page-btn {
+    min-width: 36px;
+    height: 36px;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border: 1px solid var(--color-border);
+    background-color: white;
+    color: var(--color-text-primary);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    transition: all var(--transition-fast);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pagination-page-btn:hover:not(:disabled):not(.active) {
+    background-color: var(--color-background);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+.pagination-page-btn.active {
+    background-color: var(--color-primary);
+    color: white;
+    border-color: var(--color-primary);
+    font-weight: var(--font-weight-semibold);
+}
+
+.pagination-page-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pagination-ellipsis {
+    padding: 0 var(--spacing-xs);
+    color: var(--color-text-secondary);
+    font-weight: var(--font-weight-medium);
+}
+
+.pagination-controls .btn-sm {
+    padding: var(--spacing-xs) var(--spacing-base);
+    font-size: var(--font-size-sm);
+    min-width: auto;
+}
+
+.pagination-controls .btn-sm:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Mobile Pagination Styles */
+@media (max-width: 767px) {
+    .pagination-container {
+        flex-direction: column;
+        align-items: stretch;
+        padding: var(--spacing-base);
+    }
+    
+    .pagination-info {
+        justify-content: space-between;
+        width: 100%;
+        flex-wrap: wrap;
+    }
+    
+    .pagination-controls {
+        justify-content: center;
+        width: 100%;
+        flex-wrap: wrap;
+    }
+    
+    .pagination-numbers {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .pagination-page-btn {
+        min-width: 32px;
+        height: 32px;
+        font-size: var(--font-size-xs);
+    }
+    
+    .pagination-ellipsis {
+        display: none;
+    }
+    
+    /* Show fewer page buttons on mobile */
+    .pagination-page-btn:nth-child(n+6):not(.active):not(:last-child):not(:first-child) {
+        display: none;
+    }
 }
 

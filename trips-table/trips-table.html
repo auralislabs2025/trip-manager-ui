@@ -27,18 +27,19 @@
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
                 Dashboard
             </a></li>
-            <li><a href="../trips.html" class="nav-link">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                Trips
-            </a></li>
             <li><a href="trips-table.html" class="nav-link active">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
                 Trips Table
             </a></li>
+            <!-- Hidden menu items - will be added back later -->
+            <!-- <li><a href="../trips.html" class="nav-link">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                Trips
+            </a></li>
             <li><a href="../reports.html" class="nav-link">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
                 Reports
-            </a></li>
+            </a></li> -->
         </ul>
         <div class="sidebar-footer">
             <div class="user-info">
@@ -55,18 +56,19 @@
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
             <span>Dashboard</span>
         </a>
-        <a href="../trips.html" class="nav-item">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-            <span>Trips</span>
-        </a>
         <a href="trips-table.html" class="nav-item active">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
             <span>Table</span>
         </a>
+        <!-- Hidden menu items - will be added back later -->
+        <!-- <a href="../trips.html" class="nav-item">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            <span>Trips</span>
+        </a>
         <a href="../reports.html" class="nav-item">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
             <span>Reports</span>
-        </a>
+        </a> -->
     </nav>
     
     <!-- Main Content -->
@@ -85,6 +87,18 @@
         </header>
         
         <div class="trips-table-content">
+            <!-- Status Legend -->
+            <div class="status-legend">
+                <div class="legend-item">
+                    <span class="legend-color legend-draft"></span>
+                    <span class="legend-text">Draft (Unsaved)</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color legend-closed"></span>
+                    <span class="legend-text">Closed (Saved)</span>
+                </div>
+            </div>
+            
             <!-- Toolbar -->
             <div class="table-toolbar">
                 <div class="toolbar-search">
@@ -103,20 +117,38 @@
                 <table class="excel-table" id="tripsTable">
                     <thead>
                         <tr>
-                            <th class="col-date">Date</th>
+                            <!-- Identification -->
+                            <th class="col-row-number">#</th>
+                            
+                            <!-- Date Information -->
+                            <th class="col-start-date">Start Date</th>
+                            <th class="col-expected-end-date">End Date</th>
+                            
+                            <!-- People & Equipment -->
                             <th class="col-vehicle">Vehicle</th>
                             <th class="col-driver">Driver</th>
+                            <th class="col-partner">Partner</th>
+                            
+                            <!-- Trip Details -->
                             <th class="col-purchase-place">Purchase Place</th>
                             <th class="col-item">Item</th>
+                            
+                            <!-- Operational Metrics -->
                             <th class="col-starting-km">Starting KM</th>
                             <th class="col-closing-km">Closing KM</th>
+                            
+                            <!-- Business Terms -->
                             <th class="col-tonnage">Tonnage</th>
                             <th class="col-rate">Rate/Ton</th>
+                            
+                            <!-- Financial Information -->
                             <th class="col-advance">Advance</th>
                             <th class="col-expenses">Expenses</th>
-                            <th class="col-expense-amount">Expense Amount</th>
+                            <th class="col-expense-amount">Total Expenses</th>
                             <th class="col-revenue">Revenue</th>
                             <th class="col-profit">Profit</th>
+                            
+                            <!-- Actions -->
                             <th class="col-actions">Actions</th>
                         </tr>
                     </thead>
@@ -124,6 +156,30 @@
                         <!-- Rows will be added dynamically -->
                     </tbody>
                 </table>
+            </div>
+            
+            <!-- Pagination Controls -->
+            <div class="pagination-container" id="paginationContainer" style="display: none;">
+                <div class="pagination-info">
+                    <span id="paginationInfo">Showing 0-0 of 0</span>
+                    <select id="itemsPerPageSelect" class="input input-sm">
+                        <option value="10">10 per page</option>
+                        <option value="20" selected>20 per page</option>
+                        <option value="50">50 per page</option>
+                        <option value="100">100 per page</option>
+                    </select>
+                </div>
+                <div class="pagination-controls">
+                    <button class="btn btn-sm btn-secondary" id="prevPageBtn" disabled>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                        <span>Previous</span>
+                    </button>
+                    <div class="pagination-numbers" id="paginationNumbers"></div>
+                    <button class="btn btn-sm btn-secondary" id="nextPageBtn" disabled>
+                        <span>Next</span>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    </button>
+                </div>
             </div>
             
             <!-- Empty State -->
@@ -194,4 +250,6 @@
     <script src="../js/pwa.js"></script>
 </body>
 </html>
+
+
 

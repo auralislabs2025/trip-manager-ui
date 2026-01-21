@@ -24,3 +24,5 @@ You can create simple placeholder icons using ImageMagick or any image editor:
 - Create a 512x512 blue square with white text/icon
 
 
+
+

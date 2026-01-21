@@ -54,3 +54,6 @@ const newPassword = storage.hashPassword('your_new_password');
 // Then update the user object in LocalStorage
 ```
 
+
+
+
