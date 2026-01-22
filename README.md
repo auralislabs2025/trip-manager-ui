@@ -19,12 +19,17 @@ A Progressive Web App (PWA) for managing truck operations, expenses, and profit 
 ### Prerequisites
 
 - A modern web browser (Chrome, Firefox, Safari, Edge)
+- Node.js and npm (for installing dependencies)
 - A local web server (for PWA features to work properly)
 
 ### Installation
 
 1. Clone or download this repository
-2. Serve the files using a local web server:
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Serve the files using a local web server:
 
    **Using Python:**
    ```bash
@@ -107,7 +112,10 @@ truckManagment/
 │   ├── reports.js          # Reports logic
 │   └── pwa.js              # PWA functionality
 ├── assets/
-│   └── images/             # PWA icons (see README in folder)
+│   ├── images/             # PWA icons (see README in folder)
+│   └── vendor/             # Third-party libraries (AG Grid)
+├── node_modules/           # npm dependencies (gitignored)
+├── package.json            # npm configuration and dependencies
 └── docs/
     └── SYSTEM_DOCUMENTATION.md  # Complete documentation
 ```

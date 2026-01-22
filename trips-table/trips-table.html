@@ -14,6 +14,9 @@
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="stylesheet" href="../css/components.css">
     <link rel="stylesheet" href="trips-table.css">
+    <!-- AG Grid Community CSS -->
+    <link rel="stylesheet" href="../assets/vendor/ag-grid/css/ag-grid.css">
+    <link rel="stylesheet" href="../assets/vendor/ag-grid/css/ag-theme-alpine.css">
 </head>
 <body>
     <!-- Navigation -->
@@ -112,72 +115,30 @@
                 </div>
             </div>
             
-            <!-- Excel-like Table Container -->
-            <div class="excel-table-container">
-                <table class="excel-table" id="tripsTable">
-                    <thead>
-                        <tr>
-                            <!-- Identification -->
-                            <th class="col-row-number">#</th>
-                            
-                            <!-- Date Information -->
-                            <th class="col-start-date">Start Date</th>
-                            <th class="col-expected-end-date">End Date</th>
-                            
-                            <!-- People & Equipment -->
-                            <th class="col-vehicle">Vehicle</th>
-                            <th class="col-driver">Driver</th>
-                            <th class="col-partner">Partner</th>
-                            
-                            <!-- Trip Details -->
-                            <th class="col-purchase-place">Purchase Place</th>
-                            <th class="col-item">Item</th>
-                            
-                            <!-- Operational Metrics -->
-                            <th class="col-starting-km">Starting KM</th>
-                            <th class="col-closing-km">Closing KM</th>
-                            
-                            <!-- Business Terms -->
-                            <th class="col-tonnage">Tonnage</th>
-                            <th class="col-rate">Rate/Ton</th>
-                            
-                            <!-- Financial Information -->
-                            <th class="col-advance">Advance</th>
-                            <th class="col-expenses">Expenses</th>
-                            <th class="col-expense-amount">Total Expenses</th>
-                            <th class="col-revenue">Revenue</th>
-                            <th class="col-profit">Profit</th>
-                            
-                            <!-- Actions -->
-                            <th class="col-actions">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tripsTableBody">
-                        <!-- Rows will be added dynamically -->
-                    </tbody>
-                </table>
-            </div>
+            <!-- AG Grid Container -->
+            <div id="tripsGridContainer" class="ag-grid-container ag-theme-alpine" style="height: calc(100vh - 350px); width: 100%;"></div>
             
-            <!-- Pagination Controls -->
-            <div class="pagination-container" id="paginationContainer" style="display: none;">
-                <div class="pagination-info">
-                    <span id="paginationInfo">Showing 0-0 of 0</span>
-                    <select id="itemsPerPageSelect" class="input input-sm">
-                        <option value="10">10 per page</option>
-                        <option value="20" selected>20 per page</option>
-                        <option value="50">50 per page</option>
-                        <option value="100">100 per page</option>
-                    </select>
-                </div>
-                <div class="pagination-controls">
-                    <button class="btn btn-sm btn-secondary" id="prevPageBtn" disabled>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                        <span>Previous</span>
-                    </button>
-                    <div class="pagination-numbers" id="paginationNumbers"></div>
-                    <button class="btn btn-sm btn-secondary" id="nextPageBtn" disabled>
-                        <span>Next</span>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            <!-- Date Filter Controls -->
+            <div class="date-filter-container" style="display: none; margin-top: var(--spacing-base); padding: var(--spacing-base); background: var(--color-surface); border-radius: var(--radius-lg);">
+                <div style="display: flex; gap: var(--spacing-base); align-items: center; flex-wrap: wrap;">
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-size: var(--font-size-sm);">Start Date From:</label>
+                        <input type="date" id="startDateFrom" class="input input-sm" style="min-width: 150px;">
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-size: var(--font-size-sm);">Start Date To:</label>
+                        <input type="date" id="startDateTo" class="input input-sm" style="min-width: 150px;">
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-size: var(--font-size-sm);">End Date From:</label>
+                        <input type="date" id="endDateFrom" class="input input-sm" style="min-width: 150px;">
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-size: var(--font-size-sm);">End Date To:</label>
+                        <input type="date" id="endDateTo" class="input input-sm" style="min-width: 150px;">
+                    </div>
+                    <button class="btn btn-secondary btn-sm" id="clearDateFiltersBtn" style="margin-top: 20px;">
+                        Clear Date Filters
                     </button>
                 </div>
             </div>
@@ -246,7 +207,32 @@
     <script src="../js/storage.js"></script>
     <script src="../js/auth.js"></script>
     <script src="../js/calculations.js"></script>
-    <script src="trips-table.js"></script>
+    <!-- AG Grid Community JS -->
+    <script src="../assets/vendor/ag-grid/js/ag-grid-community.min.js"></script>
+    <script>
+        // Verify AG Grid loaded before initializing
+        window.addEventListener('load', function() {
+            if (typeof agGrid === 'undefined') {
+                console.error('AG Grid failed to load from CDN. Please check your internet connection.');
+                console.log('If you are opening this file directly (file://), AG Grid may not load. Use a local server instead.');
+                return;
+            }
+            
+            // Check if createGrid is available
+            if (typeof agGrid.createGrid !== 'function' && typeof agGrid.Grid !== 'function') {
+                console.error('AG Grid API not found. Available properties:', Object.keys(agGrid).slice(0, 20));
+                return;
+            }
+            
+            // Initialize AG Grid after a short delay
+            setTimeout(function() {
+                if (typeof initTripsTableAGGrid === 'function') {
+                    initTripsTableAGGrid();
+                }
+            }, 100);
+        });
+    </script>
+    <script src="trips-table-ag-grid.js"></script>
     <script src="../js/pwa.js"></script>
 </body>
 </html>

@@ -1,3 +1,110 @@
+/* AG Grid Container Styles */
+.ag-grid-container {
+    width: 100%;
+    margin-top: var(--spacing-base);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.ag-theme-alpine {
+    --ag-font-family: inherit;
+    --ag-font-size: var(--font-size-sm);
+    --ag-border-color: var(--color-border);
+    --ag-row-border-color: #e0e0e0;
+    --ag-header-background-color: #f0f0f0;
+    --ag-odd-row-background-color: transparent;
+    --ag-header-foreground-color: var(--color-text-primary);
+    --ag-foreground-color: var(--color-text-primary);
+    --ag-background-color: white;
+    --ag-borders: solid;
+    --ag-border-width: 1px;
+    --ag-cell-horizontal-border: solid 1px #e0e0e0;
+    --ag-header-cell-horizontal-border: solid 1px #d0d0d0;
+}
+
+.ag-theme-alpine .ag-header-cell {
+    font-weight: var(--font-weight-semibold);
+    font-size: var(--font-size-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Icon header styles */
+.ag-theme-alpine .ag-header-cell .header-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    padding: var(--spacing-xs);
+}
+
+.ag-theme-alpine .ag-header-cell .header-icon svg {
+    width: 18px;
+    height: 18px;
+    stroke: var(--color-text-primary);
+    vertical-align: middle;
+}
+
+.ag-theme-alpine .ag-cell {
+    line-height: 1.5;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    white-space: nowrap !important; /* Prevent wrapping - use fixed widths */
+    display: flex;
+    align-items: center;
+    border-right: 1px solid #e0e0e0 !important;
+    overflow: hidden; /* Hide overflow */
+    text-overflow: ellipsis; /* Show ellipsis if text is too long */
+}
+
+.ag-theme-alpine .ag-header-cell {
+    border-right: 1px solid #d0d0d0 !important;
+}
+
+.ag-theme-alpine .ag-row {
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.ag-theme-alpine .ag-header-row {
+    border-bottom: 2px solid #d0d0d0;
+}
+
+/* Ensure headers stay visible when scrolling */
+.ag-theme-alpine .ag-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: var(--ag-header-background-color, #f0f0f0);
+}
+
+/* Allow cells to wrap content */
+.ag-theme-alpine .ag-row {
+    min-height: 40px;
+}
+
+.ag-theme-alpine .ag-cell-wrapper {
+    white-space: normal;
+    word-wrap: break-word;
+}
+
+.ag-theme-alpine .ag-row:hover {
+    background-color: #f8f8f8 !important;
+}
+
+/* Date Filter Container */
+.date-filter-container {
+    margin-top: var(--spacing-base);
+    padding: var(--spacing-base);
+    background-color: var(--color-surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+.date-filter-container .input-sm {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: var(--font-size-sm);
+}
+
 /* Excel-like Trips Table Styles */
 
 .trips-table-content {
@@ -594,10 +701,106 @@
     }
 }
 
+/* Responsive styles for icon headers - iPad and below */
+@media (max-width: 1023px) {
+    .ag-grid-container {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .ag-theme-alpine {
+        font-size: 12px;
+        min-width: 100%;
+    }
+    
+    .ag-theme-alpine .ag-header-cell {
+        text-transform: none;
+        letter-spacing: 0;
+        padding: 10px 8px; /* More padding for better spacing */
+        font-size: 12px; /* Slightly larger font */
+    }
+    
+    .ag-theme-alpine .ag-cell {
+        padding: 10px 8px; /* More padding for better spacing */
+        font-size: 13px; /* Slightly larger font for readability */
+        line-height: 1.5;
+    }
+    
+    .ag-theme-alpine .ag-header-cell .header-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+    }
+    
+    .ag-theme-alpine .ag-header-cell .header-icon svg {
+        width: 18px;
+        height: 18px;
+        stroke: var(--color-text-primary);
+        opacity: 0.9;
+    }
+    
+    /* Ensure tooltips work on touch devices */
+    .ag-theme-alpine .ag-header-cell[title] {
+        cursor: help;
+    }
+    
+    /* Adjust header height for icons */
+    .ag-theme-alpine .ag-header-row {
+        min-height: 42px; /* Taller header for better visibility */
+    }
+    
+    /* More spacing for rows */
+    .ag-theme-alpine .ag-row {
+        min-height: 44px; /* Taller rows for better readability */
+    }
+    
+    /* Reduce button sizes in cells */
+    .ag-theme-alpine .ag-cell button {
+        padding: 4px 8px;
+        font-size: 11px;
+        min-width: auto;
+    }
+    
+    /* Make action buttons larger and more visible on tablets */
+    .ag-theme-alpine .ag-cell button[title="Save"],
+    .ag-theme-alpine .ag-cell button[title="Edit"],
+    .ag-theme-alpine .ag-cell button[title="Cancel"],
+    .ag-theme-alpine .ag-cell button[title="Delete"] {
+        width: 36px !important;
+        height: 36px !important;
+        padding: 8px !important;
+        min-width: 36px !important;
+        min-height: 36px !important;
+    }
+    
+    .ag-theme-alpine .ag-cell button[title="Save"] svg,
+    .ag-theme-alpine .ag-cell button[title="Edit"] svg,
+    .ag-theme-alpine .ag-cell button[title="Cancel"] svg,
+    .ag-theme-alpine .ag-cell button[title="Delete"] svg {
+        width: 18px !important;
+        height: 18px !important;
+    }
+    
+    /* Better spacing in action cells */
+    .ag-theme-alpine .ag-cell[col-id="actions"] > div {
+        gap: 10px !important;
+        padding: 8px !important;
+    }
+}
+
 /* Tablet (iPad) specific styles */
 @media (min-width: 768px) and (max-width: 1024px) {
     .trips-table-content {
-        padding: var(--spacing-lg);
+        padding: var(--spacing-base);
+        overflow-x: hidden;
+    }
+    
+    .ag-grid-container {
+        width: 100%;
+        overflow-x: auto;
     }
     
     .table-toolbar {

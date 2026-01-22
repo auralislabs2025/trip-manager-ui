@@ -1,0 +1,27 @@
+{
+  "name": "truckmanagment",
+  "version": "1.0.0",
+  "description": "A Progressive Web App (PWA) for managing truck operations, expenses, and profit calculations. Built with HTML, CSS, and vanilla JavaScript.",
+  "main": "service-worker.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/auralislabs2025/trip-manager-ui.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/auralislabs2025/trip-manager-ui/issues"
+  },
+  "homepage": "https://github.com/auralislabs2025/trip-manager-ui#readme",
+  "dependencies": {
+    "ag-grid-community": "^32.2.1"
+  }
+}

@@ -182,6 +182,25 @@ a:hover {
     overflow-y: auto;
 }
 
+/* Sidebar overlay backdrop */
+#sidebarOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.4);
+    z-index: 999;
+    display: none;
+    opacity: 0;
+    transition: opacity var(--transition-base);
+}
+
+#sidebarOverlay.show {
+    display: block;
+    opacity: 1;
+}
+
 .nav-sidebar.active {
     transform: translateX(0);
 }
@@ -654,23 +673,34 @@ textarea.input {
 /* Responsive Design - Tablet */
 @media (min-width: 768px) {
     .main-content {
-        margin-left: var(--sidebar-width);
+        /* Always full width - sidebar overlays instead of pushing */
+        margin-left: 0;
+        width: 100%;
         padding: var(--spacing-lg);
         padding-bottom: var(--spacing-lg);
-        transition: margin-left var(--transition-base);
     }
     
     .main-content.sidebar-collapsed {
         margin-left: 0;
     }
     
+    /* Sidebar overlays on top - hidden by default on tablets */
     .nav-sidebar {
-        transform: translateX(0);
+        transform: translateX(-100%);
+        z-index: 1000;
     }
     
+    /* Sidebar visible when not collapsed - overlays on top */
+    .nav-sidebar:not(.collapsed) {
+        transform: translateX(0);
+        box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+    }
+    
+    /* Sidebar hidden when collapsed */
     .nav-sidebar.collapsed {
         transform: translateX(-100%);
     }
+    
     
     .nav-bottom {
         display: none;

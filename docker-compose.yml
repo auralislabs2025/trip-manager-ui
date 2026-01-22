@@ -1,0 +1,52 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: truck_management_postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-truck_management}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - truck_management_network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: truck_management_backend
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-truck_management}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      TRIP_TRACKER_APP_NAME: ${TRIP_TRACKER_APP_NAME:-Trip Tracker}
+      TRIP_TRACKER_DEBUG: ${TRIP_TRACKER_DEBUG:-True}
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    volumes:
+      - ./backend:/app
+      - ./backend/data:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - truck_management_network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  truck_management_network:
+    driver: bridge
+
