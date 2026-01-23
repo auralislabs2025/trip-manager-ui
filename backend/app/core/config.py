@@ -2,15 +2,21 @@ from pydantic_settings import BaseSettings
 from typing import Optional
 
 class Settings(BaseSettings):
-    APP_NAME: str = "Trip Tracker"
-    DEBUG: bool = True
+    # App
+    APP_NAME: str
+    DEBUG: bool
 
-    # Database settings
-    POSTGRES_HOST: str = "localhost"
-    POSTGRES_PORT: int = 5432
-    POSTGRES_DB: str = "truck_management"
-    POSTGRES_USER: str = "postgres"
-    POSTGRES_PASSWORD: str = "postgres"
+    # Database
+    POSTGRES_HOST: str
+    POSTGRES_PORT: int
+    POSTGRES_DB: str
+    POSTGRES_USER: str
+    POSTGRES_PASSWORD: str
+
+    # JWT
+    JWT_SECRET_KEY: str
+    JWT_ALGORITHM: str
+    ACCESS_TOKEN_EXPIRE_MINUTES: int
     
     @property
     def DATABASE_URL(self) -> str:
@@ -18,11 +24,7 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = ".env"
-        env_file_encoding = "utf-8"
         env_prefix = "TRIP_TRACKER_"
-        env_nested_delimiter = "__"
-        JWT_SECRET_KEY = "change-this-later"
-        JWT_ALGORITHM = "HS256"
-        ACCESS_TOKEN_EXPIRE_MINUTES = 30
+        env_file_encoding = "utf-8"
 
-settings = Settings()
+settings = Settings() 

@@ -21,14 +21,14 @@ def Create_app() -> FastAPI:
         allow_headers=["*"],
     )
     
-    # Initialize database on startup
-    @app.on_event("startup")
-    async def startup_event():
-        try:
-            init_db()
-            logger.info("Application startup completed")
-        except Exception as e:
-            logger.warning(f"Database initialization failed, will use JSON fallback: {e}")
+    # Initialize database on startup // this is not required as we are using alembic for the table migration 
+    # @app.on_event("startup")
+    # async def startup_event():
+    #     try:
+    #         init_db()
+    #         logger.info("Application startup completed")
+    #     except Exception as e:
+    #         logger.warning(f"Database initialization failed, will use JSON fallback: {e}")
     
     app.include_router(api_v1_router, prefix="/api/v1")
     return app
