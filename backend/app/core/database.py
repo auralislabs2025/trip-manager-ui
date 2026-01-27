@@ -5,8 +5,12 @@ from app.core.config import settings
 import time
 import logging
 from typing import Optional
+from sqlalchemy.orm import DeclarativeBase
 
 logger = logging.getLogger(__name__)
+
+class Base(DeclarativeBase):
+    pass
 
 # Create SQLAlchemy engine with connection retry logic
 def create_db_engine():
@@ -47,19 +51,6 @@ except Exception as e:
 # Create session factory (only if engine is available)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine) if engine else None
 
-# Create base class for models
-Base = declarative_base()
 
-# Dependency to get database session
-def get_db():
-    """Dependency to get database session - returns None if database unavailable"""
-    if SessionLocal is None:
-        yield None
-        return
-    
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+
 

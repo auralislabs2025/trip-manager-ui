@@ -765,8 +765,16 @@ function getColumnDefs() {
     ];
 }
 
-// API Configuration
-const API_BASE_URL = 'http://localhost:8000/api/v1';
+// API Configuration - use config from config.js if available, otherwise fallback
+function getApiBaseUrl() {
+    if (window.config && window.config.API_BASE_URL) {
+        return window.config.API_BASE_URL;
+    }
+    // Fallback to default if config not loaded
+    return 'http://localhost:8000/api/v1';
+}
+
+const API_BASE_URL = getApiBaseUrl();
 
 // Load trips data from API
 async function loadTripsData() {
@@ -792,14 +800,27 @@ async function loadTripsData() {
     }
     
     try {
-        // Try to fetch from API first
-        const response = await fetch(`${API_BASE_URL}/trips/`);
+        // Try to fetch from API first - use api helper if available, otherwise direct fetch
+        let trips;
         
-        if (!response.ok) {
-            throw new Error(`API request failed: ${response.status}`);
+        if (window.api && typeof window.api.get === 'function') {
+            // Use authenticated API helper
+            const response = await window.api.get('/trips/');
+            if (response.success) {
+                trips = response.data;
+            } else {
+                throw new Error(response.error || `API request failed: ${response.status}`);
+            }
+        } else {
+            // Fallback to direct fetch
+            const response = await fetch(`${API_BASE_URL}/trips/`);
+            
+            if (!response.ok) {
+                throw new Error(`API request failed: ${response.status}`);
+            }
+            
+            trips = await response.json();
         }
-        
-        const trips = await response.json();
         
         // If API returns empty array or no data, fallback to LocalStorage
         if (!trips || trips.length === 0) {

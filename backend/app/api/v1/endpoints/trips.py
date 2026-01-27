@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
 from typing import List, Dict, Any, Optional
-from app.core.database import get_db
+from app.api.deps import get_db
 from app.repositories.trip_repo import TripRepository
 from sqlalchemy.orm import Session
 

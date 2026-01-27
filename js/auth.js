@@ -3,7 +3,8 @@
 // Check if user is authenticated
 function isAuthenticated() {
     const session = storage.SessionStorage.get();
-    return session && session.userId && session.role;
+    // Check for access_token (JWT token from backend)
+    return session && session.access_token;
 }
 
 // Get current user
@@ -11,41 +12,63 @@ function getCurrentUser() {
     const session = storage.SessionStorage.get();
     if (!session) return null;
     
-    const users = storage.UserStorage.getAll();
-    const user = users.find(u => u.id === session.userId);
-    return user || null;
+    // Return session info (username from session)
+    return {
+        username: session.username,
+        loginTime: session.loginTime
+    };
 }
 
-// Login function
-function login(username, password, role) {
-    const user = storage.UserStorage.getByUsername(username);
-    
-    if (!user) {
-        return { success: false, message: 'Invalid username or password' };
+// Login function - calls backend API
+async function login(username, password) {
+    // Validate inputs
+    if (!username || !password) {
+        return { success: false, message: 'Please enter username and password' };
     }
     
-    // Check password
-    const hashedPassword = storage.hashPassword(password);
-    if (user.password !== hashedPassword) {
-        return { success: false, message: 'Invalid username or password' };
+    // Check if API is available
+    if (!window.api) {
+        return { success: false, message: 'API not initialized. Please refresh the page.' };
     }
     
-    // Check role if specified
-    if (role && user.role !== role) {
-        return { success: false, message: 'Invalid role selected' };
+    try {
+        // Call backend login API
+        const response = await window.api.post('/auth/login', {
+            username: username,
+            password: password
+        });
+        
+        if (response.success) {
+            // Store token and session info
+            const session = {
+                access_token: response.data.access_token,
+                token_type: response.data.token_type || 'bearer',
+                username: username,
+                loginTime: new Date().toISOString()
+            };
+            
+            storage.SessionStorage.set(session);
+            
+            return { 
+                success: true, 
+                message: 'Login successful',
+                session: session 
+            };
+        } else {
+            // Handle error response
+            const errorMessage = response.error || response.data?.detail || 'Invalid credentials';
+            return { 
+                success: false, 
+                message: errorMessage 
+            };
+        }
+    } catch (error) {
+        console.error('Login error:', error);
+        return { 
+            success: false, 
+            message: error.message || 'Network error. Please check your connection.' 
+        };
     }
-    
-    // Create session
-    const session = {
-        userId: user.id,
-        username: user.username,
-        role: user.role,
-        loginTime: new Date().toISOString()
-    };
-    
-    storage.SessionStorage.set(session);
-    
-    return { success: true, user: user, session: session };
 }
 
 // Logout function
@@ -81,12 +104,14 @@ function updateUserInfo() {
     const userRoleElements = document.querySelectorAll('#userRole');
     
     userNameElements.forEach(el => {
-        if (el) el.textContent = session.username;
+        if (el) el.textContent = session.username || 'User';
     });
     
+    // Role is not available from backend token, so hide or set default
     userRoleElements.forEach(el => {
         if (el) {
-            el.textContent = session.role.charAt(0).toUpperCase() + session.role.slice(1);
+            // You can fetch user role from backend if needed
+            el.textContent = 'User';
         }
     });
 }
@@ -96,7 +121,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Login page
     const loginForm = document.getElementById('loginForm');
     if (loginForm) {
-        loginForm.addEventListener('submit', function(e) {
+        loginForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const username = document.getElementById('username').value.trim();
@@ -118,23 +143,37 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            // Attempt login (default to admin role, fallback to user's actual role)
-            let result = login(username, password, 'admin');
+            // Disable submit button and show loading state
+            const submitButton = loginForm.querySelector('button[type="submit"]');
+            const originalButtonText = submitButton.textContent;
+            submitButton.disabled = true;
+            submitButton.textContent = 'Signing in...';
             
-            // If admin role fails, try without role validation (use user's actual role)
-            if (!result.success && result.message === 'Invalid role selected') {
-                result = login(username, password, null);
-            }
-            
-            if (result.success) {
-                // Redirect to dashboard
-                window.location.href = 'dashboard.html';
-            } else {
-                // Show error
+            // Attempt login with backend API
+            try {
+                const result = await login(username, password);
+                
+                if (result.success) {
+                    // Redirect to dashboard
+                    window.location.href = 'dashboard.html';
+                } else {
+                    // Show error
+                    if (errorMessage) {
+                        errorMessage.textContent = result.message;
+                        errorMessage.style.display = 'block';
+                    }
+                    // Re-enable submit button
+                    submitButton.disabled = false;
+                    submitButton.textContent = originalButtonText;
+                }
+            } catch (error) {
+                // Handle unexpected errors
                 if (errorMessage) {
-                    errorMessage.textContent = result.message;
+                    errorMessage.textContent = 'An unexpected error occurred. Please try again.';
                     errorMessage.style.display = 'block';
                 }
+                submitButton.disabled = false;
+                submitButton.textContent = originalButtonText;
             }
         });
     }

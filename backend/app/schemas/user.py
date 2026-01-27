@@ -1,7 +1,9 @@
 from pydantic import BaseModel
+from datetime import datetime
+from typing import Optional
 
 class LoginRequest(BaseModel):
-    email: str
+    username: str
     password: str
 
 class TokenResponse(BaseModel):
@@ -9,5 +11,13 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
      
 class UserMeResponse(BaseModel):
-    user_id: str
+    id: str
+    username: str
+    email: Optional[str]
+    role: str
+    created_at: datetime
+    last_login: Optional[datetime]
+
+    class Config:
+        from_attributes = True
  
