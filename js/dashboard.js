@@ -269,21 +269,50 @@ function setupNavigation() {
     const sidebarClose = document.getElementById('sidebarClose');
     const mainContent = document.querySelector('.main-content');
     
-    // Toggle sidebar function
-    const toggleSidebar = () => {
-        if (sidebar) {
-            const isMobile = window.innerWidth < 768;
-            
-            if (isMobile) {
-                // Mobile: use active class
-                sidebar.classList.toggle('active');
-            } else {
-                // Tablet/Desktop: use collapsed class
-                sidebar.classList.toggle('collapsed');
-                if (mainContent) {
-                    mainContent.classList.toggle('sidebar-collapsed');
-                }
-            }
+    // Initialize sidebar state on page load
+    if (sidebar) {
+        const isMobile = window.innerWidth < 768;
+        const isTablet = window.innerWidth >= 768 && window.innerWidth < 1024;
+        const isDesktop = window.innerWidth >= 1024;
+        
+        // Reset all classes first
+        sidebar.classList.remove('active', 'collapsed');
+        
+        if (isMobile) {
+            // On mobile, sidebar should be hidden (no classes needed)
+            // Base state is hidden
+        } else if (isTablet) {
+            // On tablet, start with sidebar collapsed (hidden)
+            sidebar.classList.add('collapsed');
+        } else if (isDesktop) {
+            // On desktop, sidebar should be visible (not collapsed)
+            // Don't add collapsed class, so it shows
+            sidebar.classList.remove('collapsed');
+        }
+    }
+    
+    // Create overlay backdrop for sidebar (if it doesn't exist)
+    let overlay = document.getElementById('sidebarOverlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'sidebarOverlay';
+        document.body.appendChild(overlay);
+    }
+    
+    // Update overlay visibility when sidebar state changes
+    const updateOverlay = () => {
+        if (!overlay || !sidebar) return;
+        const isMobile = window.innerWidth < 768;
+        const isDesktop = window.innerWidth >= 1024;
+        const isOpen = isMobile ? sidebar.classList.contains('active') : !sidebar.classList.contains('collapsed');
+        
+        // Only show overlay on tablet (768-1023px) when sidebar is open
+        // On desktop, sidebar is always visible, no overlay needed
+        // On mobile, no overlay needed
+        if (isOpen && !isMobile && !isDesktop) {
+            overlay.classList.add('show');
+        } else {
+            overlay.classList.remove('show');
         }
     };
     
@@ -300,6 +329,7 @@ function setupNavigation() {
                     mainContent.classList.add('sidebar-collapsed');
                 }
             }
+            updateOverlay();
         }
     };
     
@@ -316,24 +346,93 @@ function setupNavigation() {
                     mainContent.classList.remove('sidebar-collapsed');
                 }
             }
+            updateOverlay();
+        }
+    };
+    
+    // Toggle sidebar function
+    const toggleSidebar = (e) => {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        if (sidebar) {
+            const isMobile = window.innerWidth < 768;
+            
+            if (isMobile) {
+                // Mobile: use active class
+                sidebar.classList.toggle('active');
+            } else {
+                // Tablet/Desktop: use collapsed class
+                sidebar.classList.toggle('collapsed');
+                if (mainContent) {
+                    mainContent.classList.toggle('sidebar-collapsed');
+                }
+                // Update overlay visibility
+                updateOverlay();
+            }
         }
     };
     
     if (menuToggle && sidebar) {
-        menuToggle.addEventListener('click', toggleSidebar);
+        // Remove any existing listeners to prevent duplicates
+        const newMenuToggle = menuToggle.cloneNode(true);
+        menuToggle.parentNode.replaceChild(newMenuToggle, menuToggle);
+        
+        newMenuToggle.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleSidebar(e);
+        });
     }
     
     if (sidebarClose && sidebar) {
-        sidebarClose.addEventListener('click', closeSidebar);
+        sidebarClose.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            closeSidebar();
+        });
     }
     
-    // Close sidebar when clicking outside (mobile only)
+    // Close sidebar when clicking on overlay
+    overlay.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        closeSidebar();
+    });
+    
+    // Close sidebar when clicking outside (on main content)
+    if (mainContent) {
+        mainContent.addEventListener('click', (e) => {
+            if (window.innerWidth < 768 && sidebar && sidebar.classList.contains('active')) {
+                // On mobile, close if clicking outside sidebar
+                if (!sidebar.contains(e.target)) {
+                    closeSidebar();
+                }
+            }
+        });
+    }
+
+    // Close sidebar when clicking a nav link (except the Master toggle)
     if (sidebar) {
         sidebar.addEventListener('click', (e) => {
-            if (window.innerWidth < 768 && e.target === sidebar) {
+            const link = e.target.closest('a');
+            if (!link) return;
+            if (link.id === 'masterMenuToggle') return;
+            const href = link.getAttribute('href') || '';
+            if (href === '' || href === '#' || href.startsWith('javascript')) return;
+            if (window.innerWidth < 1024) {
                 closeSidebar();
             }
         });
+    }
+    
+    // Watch for sidebar class changes to update overlay
+    if (sidebar) {
+        const observer = new MutationObserver(updateOverlay);
+        observer.observe(sidebar, { attributes: true, attributeFilter: ['class'] });
+        // Initial overlay update
+        setTimeout(() => updateOverlay(), 100);
     }
     
     // Handle window resize

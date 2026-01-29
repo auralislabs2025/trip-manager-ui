@@ -2,13 +2,19 @@
 
 // Check if user is authenticated
 function isAuthenticated() {
+    if (typeof storage === 'undefined' || !storage.SessionStorage) {
+        return false;
+    }
     const session = storage.SessionStorage.get();
-    // Check for access_token (JWT token from backend)
-    return session && session.access_token;
+    // Check for access_token (JWT token from backend) or username (LocalStorage session)
+    return session && (session.access_token || session.username);
 }
 
 // Get current user
 function getCurrentUser() {
+    if (typeof storage === 'undefined' || !storage.SessionStorage) {
+        return null;
+    }
     const session = storage.SessionStorage.get();
     if (!session) return null;
     
@@ -47,7 +53,9 @@ async function login(username, password) {
                 loginTime: new Date().toISOString()
             };
             
-            storage.SessionStorage.set(session);
+            if (typeof storage !== 'undefined' && storage.SessionStorage) {
+                storage.SessionStorage.set(session);
+            }
             
             return { 
                 success: true, 
@@ -73,8 +81,22 @@ async function login(username, password) {
 
 // Logout function
 function logout() {
-    storage.SessionStorage.clear();
-    window.location.href = 'index.html';
+    if (typeof storage !== 'undefined' && storage.SessionStorage) {
+        storage.SessionStorage.clear();
+    }
+    
+    // Determine correct path to index.html based on current location
+    const currentPath = window.location.pathname;
+    let redirectPath = 'index.html';
+    
+    // If we're in a subdirectory (masters, trips-table, etc.), go up one level
+    if (currentPath.includes('/masters/') || currentPath.includes('\\masters\\')) {
+        redirectPath = '../index.html';
+    } else if (currentPath.includes('/trips-table/') || currentPath.includes('\\trips-table\\')) {
+        redirectPath = '../index.html';
+    }
+    
+    window.location.href = redirectPath;
 }
 
 // Protect route - redirect to login if not authenticated
@@ -97,6 +119,9 @@ function protectRoute() {
 
 // Update user info in navigation
 function updateUserInfo() {
+    if (typeof storage === 'undefined' || !storage.SessionStorage) {
+        return;
+    }
     const session = storage.SessionStorage.get();
     if (!session) return;
     

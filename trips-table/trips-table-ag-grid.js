@@ -198,6 +198,11 @@ function initTripsTableAGGrid() {
     
     setupEventListeners();
     setupNavigation();
+    
+    // Setup master menu dropdown
+    if (typeof MastersNavigation !== 'undefined' && MastersNavigation.setupMasterMenu) {
+        MastersNavigation.setupMasterMenu();
+    }
 }
 
 // Load master data
@@ -1356,39 +1361,7 @@ function setupNavigation() {
         sidebar.classList.add('collapsed');
     }
     
-    // Create overlay backdrop for sidebar
-    let overlay = document.getElementById('sidebarOverlay');
-    if (!overlay) {
-        overlay = document.createElement('div');
-        overlay.id = 'sidebarOverlay';
-        overlay.addEventListener('click', () => {
-            if (window.innerWidth >= 768 && sidebar) {
-                sidebar.classList.add('collapsed');
-                overlay.classList.remove('show');
-            }
-        });
-        document.body.appendChild(overlay);
-    }
-    
-    const toggleSidebar = () => {
-        if (!sidebar) return;
-        const isMobile = window.innerWidth < 768;
-        
-        if (isMobile) {
-            sidebar.classList.toggle('active');
-        } else {
-            // Tablet/Desktop: toggle collapsed class - sidebar overlays
-            const wasCollapsed = sidebar.classList.contains('collapsed');
-            if (wasCollapsed) {
-                sidebar.classList.remove('collapsed');
-                overlay.classList.add('show');
-            } else {
-                sidebar.classList.add('collapsed');
-                overlay.classList.remove('show');
-            }
-        }
-    };
-    
+    // Define closeSidebar function first (needed by overlay handler)
     const closeSidebar = () => {
         if (!sidebar) return;
         const isMobile = window.innerWidth < 768;
@@ -1403,18 +1376,102 @@ function setupNavigation() {
         }
     };
     
+    // Create overlay backdrop for sidebar
+    let overlay = document.getElementById('sidebarOverlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'sidebarOverlay';
+        document.body.appendChild(overlay);
+    }
+    
+    // Setup overlay click handler
+    const overlayClickHandler = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        closeSidebar();
+    };
+    
+    // Remove any existing listeners and add new one
+    const newOverlay = overlay.cloneNode(true);
+    overlay.parentNode.replaceChild(newOverlay, overlay);
+    overlay = newOverlay;
+    overlay.addEventListener('click', overlayClickHandler);
+    
+    const toggleSidebar = (e) => {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        if (!sidebar) return;
+        const isMobile = window.innerWidth < 768;
+        
+        if (isMobile) {
+            sidebar.classList.toggle('active');
+        } else {
+            // Tablet/Desktop: toggle collapsed class - sidebar overlays
+            const wasCollapsed = sidebar.classList.contains('collapsed');
+            if (wasCollapsed) {
+                sidebar.classList.remove('collapsed');
+                if (overlay) {
+                    overlay.classList.add('show');
+                }
+            } else {
+                sidebar.classList.add('collapsed');
+                if (overlay) {
+                    overlay.classList.remove('show');
+                }
+            }
+        }
+    };
+    
     if (menuToggle && sidebar) {
-        menuToggle.addEventListener('click', toggleSidebar);
+        // Remove any existing listeners to prevent duplicates
+        const newMenuToggle = menuToggle.cloneNode(true);
+        menuToggle.parentNode.replaceChild(newMenuToggle, menuToggle);
+        
+        newMenuToggle.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleSidebar(e);
+        });
     }
     
     if (sidebarClose && sidebar) {
-        sidebarClose.addEventListener('click', closeSidebar);
+        sidebarClose.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            closeSidebar();
+        });
     }
     
-    // Close sidebar when clicking outside on mobile
+    // Overlay click handler is already set up above when overlay is created
+    
+    // Close sidebar when clicking outside (on main content)
+    if (mainContent) {
+        mainContent.addEventListener('click', (e) => {
+            if (window.innerWidth < 768 && sidebar && sidebar.classList.contains('active')) {
+                // On mobile, close if clicking outside sidebar
+                if (!sidebar.contains(e.target)) {
+                    closeSidebar();
+                }
+            } else if (window.innerWidth >= 768 && sidebar && !sidebar.classList.contains('collapsed')) {
+                // On tablet/desktop, close if clicking outside sidebar (when overlay is visible)
+                if (!sidebar.contains(e.target) && overlay && overlay.classList.contains('show')) {
+                    closeSidebar();
+                }
+            }
+        });
+    }
+
+    // Close sidebar when clicking a nav link (except the Master toggle)
     if (sidebar) {
         sidebar.addEventListener('click', (e) => {
-            if (window.innerWidth < 768 && e.target === sidebar) {
+            const link = e.target.closest('a');
+            if (!link) return;
+            if (link.id === 'masterMenuToggle') return;
+            const href = link.getAttribute('href') || '';
+            if (href === '' || href === '#' || href.startsWith('javascript')) return;
+            if (window.innerWidth < 1024) {
                 closeSidebar();
             }
         });

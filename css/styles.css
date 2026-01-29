@@ -128,6 +128,8 @@ a:hover {
     gap: var(--spacing-base);
     margin-bottom: var(--spacing-lg);
     padding: var(--spacing-base) 0;
+    position: relative;
+    z-index: 1;
 }
 
 .page-header h1 {
@@ -148,6 +150,8 @@ a:hover {
     color: var(--color-text-primary);
     border-radius: var(--radius-md);
     transition: background-color var(--transition-fast);
+    position: relative;
+    z-index: 1;
 }
 
 .menu-toggle:hover {
@@ -176,10 +180,27 @@ a:hover {
     height: 100vh;
     background-color: var(--color-surface);
     box-shadow: var(--shadow-md);
-    z-index: 1000;
+    z-index: 1100;
     transform: translateX(-100%);
     transition: transform var(--transition-base);
     overflow-y: auto;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.nav-sidebar * {
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.nav-sidebar .nav-item-dropdown,
+.nav-sidebar .nav-submenu,
+.nav-sidebar .nav-submenu li,
+.nav-sidebar .nav-submenu a {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 /* Sidebar overlay backdrop */
@@ -194,11 +215,13 @@ a:hover {
     display: none;
     opacity: 0;
     transition: opacity var(--transition-base);
+    pointer-events: none;
 }
 
 #sidebarOverlay.show {
     display: block;
     opacity: 1;
+    pointer-events: auto;
 }
 
 .nav-sidebar.active {
@@ -242,10 +265,20 @@ a:hover {
 .nav-menu {
     list-style: none;
     padding: var(--spacing-base) 0;
+    margin: 0;
+    width: 100%;
+    box-sizing: border-box;
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .nav-menu li {
     margin: 0;
+    padding: 0;
+    width: 100%;
+    box-sizing: border-box;
+    position: relative;
 }
 
 .nav-link {
@@ -256,6 +289,9 @@ a:hover {
     color: var(--color-text-primary);
     transition: background-color var(--transition-fast);
     border-left: 3px solid transparent;
+    width: 100%;
+    box-sizing: border-box;
+    text-decoration: none;
 }
 
 .nav-link:hover {
