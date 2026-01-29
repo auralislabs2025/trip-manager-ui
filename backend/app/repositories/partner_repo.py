@@ -11,7 +11,7 @@ def get_partner_by_id(db, partner_id: str):
 
 
 def get_partners(db):
-    return db.query(Partner).all()
+    return db.query(Partner).filter(Partner.is_active == True).all()
 
 
 def create_partner(db, partner: PartnerCreate):

@@ -10,7 +10,7 @@ def get_driver_by_id(db, driver_id: str):
     return db.query(Driver).filter(Driver.id == driver_id).first()
 
 def get_drivers(db):
-    return db.query(Driver).all()
+    return db.query(Driver).filter(Driver.is_active == True).all()
 
 def create_driver(db, driver: DriverCreate):
     driver = Driver(**driver.model_dump())

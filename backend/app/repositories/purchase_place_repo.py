@@ -11,7 +11,7 @@ def get_purchase_place_by_id(db, purchase_place_id: str):
 
 
 def get_purchase_places(db):
-    return db.query(PurchasePlace).all()
+    return db.query(PurchasePlace).filter(PurchasePlace.is_active == True).all()
 
 
 def create_purchase_place(db, purchase_place: PurchasePlaceCreate):

@@ -11,7 +11,7 @@ def get_item_by_id(db, item_id: str):
 
 
 def get_items(db):
-    return db.query(Item).all()
+    return db.query(Item).filter(Item.is_active == True).all()
 
 
 def create_item(db, item: ItemCreate):

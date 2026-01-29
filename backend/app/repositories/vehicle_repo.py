@@ -11,7 +11,7 @@ def get_vehicle_by_id(db, vehicle_id: str):
 
 
 def get_vehicles(db):
-    return db.query(Vehicle).all()
+    return db.query(Vehicle).filter(Vehicle.is_active == True).all()
 
 
 def create_vehicle(db, vehicle: VehicleCreate):

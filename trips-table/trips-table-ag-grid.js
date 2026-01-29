@@ -7,10 +7,21 @@ let masterData = {
     drivers: [],
     items: [],
     purchasePlaces: [],
-    partners: []
+    partners: [],
+    vehicleNameToId: {},
+    vehicleIdToName: {},
+    driverNameToId: {},
+    driverIdToName: {},
+    itemNameToId: {},
+    itemIdToName: {},
+    purchasePlaceNameToId: {},
+    purchasePlaceIdToName: {},
+    partnerNameToId: {},
+    partnerIdToName: {}
 };
 let expenseTypes = ['Food', 'Diesel', 'Toll', 'Salary', 'GST', 'Other'];
 let currentExpenseBreakdownRow = null;
+let mastersReady = false;
 
 // Initialize AG Grid
 function initTripsTableAGGrid() {
@@ -205,26 +216,179 @@ function initTripsTableAGGrid() {
     }
 }
 
-// Load master data
-function loadMasterData() {
-    const vehicles = storage.VehicleStorage.getAll();
-    const drivers = storage.DriverStorage.getAll();
-    
-    masterData.vehicles = vehicles.map(v => v.vehicleNumber || v.name || v);
-    masterData.drivers = drivers.map(d => d.name || d);
-    
-    const trips = storage.TripStorage.getAll();
-    const itemsSet = new Set();
-    const purchasePlacesSet = new Set();
-    const partnersSet = new Set();
-    trips.forEach(trip => {
-        if (trip.itemName && trip.itemName !== '__ADD_NEW__') itemsSet.add(trip.itemName);
-        if (trip.purchasePlace && trip.purchasePlace !== '__ADD_NEW__') purchasePlacesSet.add(trip.purchasePlace);
-        if (trip.partner && trip.partner !== '__ADD_NEW__') partnersSet.add(trip.partner);
+function normalizeMasterName(value) {
+    return (value || '').toString().trim();
+}
+
+function setMasterMaps() {
+    masterData.vehicleNameToId = {};
+    masterData.vehicleIdToName = {};
+    masterData.driverNameToId = {};
+    masterData.driverIdToName = {};
+    masterData.itemNameToId = {};
+    masterData.itemIdToName = {};
+    masterData.purchasePlaceNameToId = {};
+    masterData.purchasePlaceIdToName = {};
+    masterData.partnerNameToId = {};
+    masterData.partnerIdToName = {};
+}
+
+function applyMasterMappingsToTrip(trip) {
+    if (!trip) return;
+
+    // Normalize incoming snake_case fields if present
+    trip.vehicleId = trip.vehicleId || trip.vehicle_id || null;
+    trip.driverId = trip.driverId || trip.driver_id || null;
+    trip.itemId = trip.itemId || trip.item_id || null;
+    trip.purchasePlaceId = trip.purchasePlaceId || trip.purchase_place_id || null;
+    trip.partnerId = trip.partnerId || trip.partner_id || null;
+
+    trip.vehicleNumber = trip.vehicleNumber || trip.vehicle_number || '';
+    trip.driverName = trip.driverName || trip.driver_name || '';
+
+    if (trip.vehicleId && !trip.vehicleNumber) {
+        trip.vehicleNumber = masterData.vehicleIdToName[trip.vehicleId] || '';
+    }
+    if (trip.vehicleNumber && !trip.vehicleId) {
+        const key = normalizeMasterName(trip.vehicleNumber);
+        trip.vehicleId = masterData.vehicleNameToId[key] || null;
+    }
+
+    if (trip.driverId && !trip.driverName) {
+        trip.driverName = masterData.driverIdToName[trip.driverId] || '';
+    }
+    if (trip.driverName && !trip.driverId) {
+        const key = normalizeMasterName(trip.driverName);
+        trip.driverId = masterData.driverNameToId[key] || null;
+    }
+
+    if (trip.itemId && !trip.itemName) {
+        trip.itemName = masterData.itemIdToName[trip.itemId] || '';
+    }
+    if (trip.itemName && !trip.itemId) {
+        const key = normalizeMasterName(trip.itemName);
+        trip.itemId = masterData.itemNameToId[key] || null;
+    }
+
+    if (trip.purchasePlaceId && !trip.purchasePlace) {
+        trip.purchasePlace = masterData.purchasePlaceIdToName[trip.purchasePlaceId] || '';
+    }
+    if (trip.purchasePlace && !trip.purchasePlaceId) {
+        const key = normalizeMasterName(trip.purchasePlace);
+        trip.purchasePlaceId = masterData.purchasePlaceNameToId[key] || null;
+    }
+
+    if (trip.partnerId && !trip.partner) {
+        trip.partner = masterData.partnerIdToName[trip.partnerId] || '';
+    }
+    if (trip.partner && !trip.partnerId) {
+        const key = normalizeMasterName(trip.partner);
+        trip.partnerId = masterData.partnerNameToId[key] || null;
+    }
+}
+
+function syncTripMasterFieldsForGrid() {
+    if (!gridApi) return;
+    gridApi.forEachNode((node) => {
+        if (!node?.data) return;
+        applyMasterMappingsToTrip(node.data);
     });
-    masterData.items = Array.from(itemsSet);
-    masterData.purchasePlaces = Array.from(purchasePlacesSet);
-    masterData.partners = Array.from(partnersSet);
+}
+
+// Load master data
+async function loadMasterData() {
+    const baseUrl = window.config?.API_BASE_URL || 'http://localhost:8000/api/v1';
+    const mastersUrl = `${baseUrl}/trips/masters`;
+
+    try {
+        let data;
+        if (window.api && typeof window.api.get === 'function') {
+            const response = await window.api.get('/trips/masters');
+            if (!response.success) {
+                throw new Error(response.error || `API request failed: ${response.status}`);
+            }
+            data = response.data;
+        } else {
+            const response = await fetch(mastersUrl);
+            if (!response.ok) {
+                throw new Error(`Failed to load masters: ${response.status}`);
+            }
+            data = await response.json();
+        }
+
+        setMasterMaps();
+
+        masterData.vehicles = (data.vehicles || []).map((v) => {
+            const name = normalizeMasterName(v.vehicle_number || v.name);
+            if (name) {
+                masterData.vehicleNameToId[name] = v.id;
+                masterData.vehicleIdToName[v.id] = name;
+            }
+            return name;
+        }).filter(Boolean);
+        masterData.drivers = (data.drivers || []).map((d) => {
+            const name = normalizeMasterName(d.name);
+            if (name) {
+                masterData.driverNameToId[name] = d.id;
+                masterData.driverIdToName[d.id] = name;
+            }
+            return name;
+        }).filter(Boolean);
+        masterData.items = (data.items || []).map((i) => {
+            const name = normalizeMasterName(i.name);
+            if (name) {
+                masterData.itemNameToId[name] = i.id;
+                masterData.itemIdToName[i.id] = name;
+            }
+            return name;
+        }).filter(Boolean);
+        masterData.purchasePlaces = (data.purchase_places || []).map((p) => {
+            const name = normalizeMasterName(p.name);
+            if (name) {
+                masterData.purchasePlaceNameToId[name] = p.id;
+                masterData.purchasePlaceIdToName[p.id] = name;
+            }
+            return name;
+        }).filter(Boolean);
+        masterData.partners = (data.partners || []).map((p) => {
+            const name = normalizeMasterName(p.name);
+            if (name) {
+                masterData.partnerNameToId[name] = p.id;
+                masterData.partnerIdToName[p.id] = name;
+            }
+            return name;
+        }).filter(Boolean);
+
+        mastersReady = true;
+        syncTripMasterFieldsForGrid();
+
+        if (gridApi) {
+            gridApi.refreshCells({ force: true });
+        }
+    } catch (error) {
+        console.warn('Master API unavailable, falling back to local storage:', error);
+
+        setMasterMaps();
+
+        const vehicles = storage.VehicleStorage.getAll();
+        const drivers = storage.DriverStorage.getAll();
+        
+        masterData.vehicles = vehicles.map(v => normalizeMasterName(v.vehicleNumber || v.name || v)).filter(Boolean);
+        masterData.drivers = drivers.map(d => normalizeMasterName(d.name || d)).filter(Boolean);
+        
+        const trips = storage.TripStorage.getAll();
+        const itemsSet = new Set();
+        const purchasePlacesSet = new Set();
+        const partnersSet = new Set();
+        trips.forEach(trip => {
+            if (trip.itemName && trip.itemName !== '__ADD_NEW__') itemsSet.add(normalizeMasterName(trip.itemName));
+            if (trip.purchasePlace && trip.purchasePlace !== '__ADD_NEW__') purchasePlacesSet.add(normalizeMasterName(trip.purchasePlace));
+            if (trip.partner && trip.partner !== '__ADD_NEW__') partnersSet.add(normalizeMasterName(trip.partner));
+        });
+        masterData.items = Array.from(itemsSet);
+        masterData.purchasePlaces = Array.from(purchasePlacesSet);
+        masterData.partners = Array.from(partnersSet);
+    }
 }
 
 // Custom cell renderer for master data dropdowns with add button
@@ -390,13 +554,14 @@ function getColumnDefs() {
             valueGetter: (params) => {
                 if (!params.data?.tripStartDate) return '';
                 const date = params.data.tripStartDate;
-                if (date.includes('-')) return date;
+                const dateString = typeof date === 'string' ? date : String(date);
+                if (dateString.includes('-')) return dateString;
                 // Convert to YYYY-MM-DD for editing
                 const dateObj = new Date(date);
                 if (!isNaN(dateObj.getTime())) {
                     return dateObj.toISOString().split('T')[0];
                 }
-                return date;
+                return dateString;
             },
             valueSetter: (params) => {
                 params.data.tripStartDate = params.newValue;
@@ -422,12 +587,13 @@ function getColumnDefs() {
             valueGetter: (params) => {
                 if (!params.data?.estimatedEndDate) return '';
                 const date = params.data.estimatedEndDate;
-                if (date.includes('-')) return date;
+                const dateString = typeof date === 'string' ? date : String(date);
+                if (dateString.includes('-')) return dateString;
                 const dateObj = new Date(date);
                 if (!isNaN(dateObj.getTime())) {
                     return dateObj.toISOString().split('T')[0];
                 }
-                return date;
+                return dateString;
             },
             valueSetter: (params) => {
                 params.data.estimatedEndDate = params.newValue;
@@ -445,9 +611,9 @@ function getColumnDefs() {
                 return !params.data?.locked;
             },
             cellEditor: 'agSelectCellEditor',
-            cellEditorParams: {
+            cellEditorParams: () => ({
                 values: [...masterData.vehicles, 'Add New...']
-            },
+            }),
             valueFormatter: (params) => {
                 if (params.value === '__ADD_NEW__' || params.value === 'Add New...') return '';
                 return params.value || '';
@@ -464,9 +630,9 @@ function getColumnDefs() {
                 return !params.data?.locked;
             },
             cellEditor: 'agSelectCellEditor',
-            cellEditorParams: {
+            cellEditorParams: () => ({
                 values: [...masterData.drivers, 'Add New...']
-            },
+            }),
             valueFormatter: (params) => {
                 if (params.value === '__ADD_NEW__' || params.value === 'Add New...') return '';
                 return params.value || '';
@@ -483,9 +649,9 @@ function getColumnDefs() {
                 return !params.data?.locked;
             },
             cellEditor: 'agSelectCellEditor',
-            cellEditorParams: {
+            cellEditorParams: () => ({
                 values: [...masterData.partners, 'Add New...']
-            },
+            }),
             valueFormatter: (params) => {
                 if (params.value === '__ADD_NEW__' || params.value === 'Add New...') return '';
                 return params.value || '';
@@ -502,9 +668,9 @@ function getColumnDefs() {
                 return !params.data?.locked;
             },
             cellEditor: 'agSelectCellEditor',
-            cellEditorParams: {
+            cellEditorParams: () => ({
                 values: [...masterData.purchasePlaces, 'Add New...']
-            },
+            }),
             valueFormatter: (params) => {
                 if (params.value === '__ADD_NEW__' || params.value === 'Add New...') return '';
                 return params.value || '';
@@ -521,9 +687,9 @@ function getColumnDefs() {
                 return !params.data?.locked;
             },
             cellEditor: 'agSelectCellEditor',
-            cellEditorParams: {
+            cellEditorParams: () => ({
                 values: [...masterData.items, 'Add New...']
-            },
+            }),
             valueFormatter: (params) => {
                 if (params.value === '__ADD_NEW__' || params.value === 'Add New...') return '';
                 return params.value || '';
@@ -842,10 +1008,16 @@ async function loadTripsData() {
         });
         
         // Set locked status for closed trips
-        const tripsWithLocked = trips.map(trip => ({
-            ...trip,
-            locked: trip.status === 'closed'
-        }));
+        const tripsWithLocked = trips.map(trip => {
+            const mergedTrip = {
+                ...trip,
+                locked: trip.status === 'closed'
+            };
+            if (mastersReady) {
+                applyMasterMappingsToTrip(mergedTrip);
+            }
+            return mergedTrip;
+        });
         
         // Use setRowData if available, otherwise use setGridOption
         if (typeof gridApi.setRowData === 'function') {
@@ -877,10 +1049,16 @@ function loadTripsDataFromStorage() {
     const trips = storage.TripStorage.getAll();
     
     // Set locked status for closed trips
-    const tripsWithLocked = trips.length === 0 ? [] : trips.map(trip => ({
-        ...trip,
-        locked: trip.status === 'closed'
-    }));
+    const tripsWithLocked = trips.length === 0 ? [] : trips.map(trip => {
+        const mergedTrip = {
+            ...trip,
+            locked: trip.status === 'closed'
+        };
+        if (mastersReady) {
+            applyMasterMappingsToTrip(mergedTrip);
+        }
+        return mergedTrip;
+    });
     
     if (trips.length > 0) {
         // Sort by date (newest first)
@@ -952,6 +1130,23 @@ function handleCellValueChanged(params) {
             // Revert the cell value back to empty (we'll set it after user adds)
             params.node.setDataValue(field, params.oldValue || '');
             return;
+        }
+    }
+
+    // Map master names to IDs when a selection changes
+    if (mastersReady) {
+        const field = params.colDef.field;
+        const selectedName = normalizeMasterName(params.newValue);
+        if (field === 'vehicleNumber') {
+            params.data.vehicleId = masterData.vehicleNameToId[selectedName] || null;
+        } else if (field === 'driverName') {
+            params.data.driverId = masterData.driverNameToId[selectedName] || null;
+        } else if (field === 'partner') {
+            params.data.partnerId = masterData.partnerNameToId[selectedName] || null;
+        } else if (field === 'purchasePlace') {
+            params.data.purchasePlaceId = masterData.purchasePlaceNameToId[selectedName] || null;
+        } else if (field === 'itemName') {
+            params.data.itemId = masterData.itemNameToId[selectedName] || null;
         }
     }
     
@@ -1059,6 +1254,11 @@ function saveRowAG(tripId) {
         partner: trip.partner || null,
         purchasePlace: trip.purchasePlace,
         itemName: trip.itemName,
+        vehicleId: trip.vehicleId || masterData.vehicleNameToId[normalizeMasterName(trip.vehicleNumber)] || null,
+        driverId: trip.driverId || masterData.driverNameToId[normalizeMasterName(trip.driverName)] || null,
+        partnerId: trip.partnerId || masterData.partnerNameToId[normalizeMasterName(trip.partner)] || null,
+        purchasePlaceId: trip.purchasePlaceId || masterData.purchasePlaceNameToId[normalizeMasterName(trip.purchasePlace)] || null,
+        itemId: trip.itemId || masterData.itemNameToId[normalizeMasterName(trip.itemName)] || null,
         startingKm: parseFloat(trip.startingKm) || 0,
         closingKm: parseFloat(trip.closingKm) || 0,
         tonnage: parseFloat(trip.tonnage) || 0,
