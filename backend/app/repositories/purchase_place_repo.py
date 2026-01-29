@@ -1,6 +1,8 @@
 from app.models.purchase_place import PurchasePlace
 from app.schemas.purchase_place import PurchasePlaceCreate
 from fastapi import HTTPException
+from sqlalchemy import or_, func
+from typing import Optional
 import logging
 
 logger = logging.getLogger(__name__)
@@ -10,8 +12,17 @@ def get_purchase_place_by_id(db, purchase_place_id: str):
     return db.query(PurchasePlace).filter(PurchasePlace.id == purchase_place_id).first()
 
 
-def get_purchase_places(db):
-    return db.query(PurchasePlace).filter(PurchasePlace.is_active == True).all()
+def get_purchase_places(db, search: Optional[str] = None):
+    query = db.query(PurchasePlace).filter(PurchasePlace.is_active == True)
+    search_value = (search or "").strip().lower()
+    if search_value:
+        query = query.filter(
+            or_(
+                func.lower(PurchasePlace.name).contains(search_value),
+                func.lower(PurchasePlace.location).contains(search_value),
+            )
+        )
+    return query.all()
 
 
 def create_purchase_place(db, purchase_place: PurchasePlaceCreate):

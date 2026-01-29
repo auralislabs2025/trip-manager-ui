@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends
+from typing import Optional
 from app.api.deps import get_db
 from app.schemas.vehicle import VehicleCreate, VehicleResponse, VehicleUpdate
 from app.repositories.vehicle_repo import (
@@ -13,8 +14,11 @@ router = APIRouter()
 
 
 @router.get("/", response_model=list[VehicleResponse])
-def get_all_vehicles(db = Depends(get_db)):
-    vehicles = get_vehicles(db)
+def get_all_vehicles(
+    search: Optional[str] = None,
+    db = Depends(get_db)
+):
+    vehicles = get_vehicles(db, search=search)
     return vehicles
 
 

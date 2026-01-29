@@ -3,6 +3,8 @@
 let gridApi;
 let currentPartnerId = null;
 let isEditMode = false;
+let currentSearchTerm = '';
+let searchDebounceTimer = null;
 
 // Initialize page
 document.addEventListener('DOMContentLoaded', function() {
@@ -63,12 +65,15 @@ function setupEventListeners() {
         confirmDelete();
     });
     
-    // Search input
+    // Search input (server-side)
     document.getElementById('searchInput').addEventListener('input', (e) => {
-        const searchTerm = e.target.value;
-        if (gridApi) {
-            gridApi.setGridOption('quickFilterText', searchTerm);
+        currentSearchTerm = e.target.value || '';
+        if (searchDebounceTimer) {
+            clearTimeout(searchDebounceTimer);
         }
+        searchDebounceTimer = setTimeout(() => {
+            loadPartners();
+        }, 300);
     });
     
     // Partner type filter
@@ -163,7 +168,8 @@ async function loadPartners() {
             page: 1,
             page_size: 1000,
             is_active: activeFilter ? true : undefined,
-            partner_type: partnerType || undefined
+            partner_type: partnerType || undefined,
+            search: currentSearchTerm.trim() || undefined
         };
         
         const response = await MastersAPI.getAll('partners', params);

@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from typing import List, Dict, Any, Optional
 from app.api.deps import get_db
 from app.repositories.trip_repo import TripRepository
+from app.schemas.trip import TripCreate, TripResponse
 from sqlalchemy.orm import Session
 from app.models.driver import Driver
 from app.models.vehicle import Vehicle
@@ -108,4 +109,17 @@ async def get_trip_by_id(trip_id: str, db: Optional[Session] = Depends(get_db)):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching trip: {str(e)}")
+
+
+@router.post("/", response_model=TripResponse)
+async def create_trip(trip: TripCreate, db: Optional[Session] = Depends(get_db)):
+    """
+    Create a new trip
+    """
+    try:
+        trip_repo = TripRepository(db)
+        new_trip = trip_repo.create(trip)
+        return new_trip
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error creating trip: {str(e)}")
 

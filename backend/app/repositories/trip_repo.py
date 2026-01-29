@@ -59,7 +59,7 @@ class TripRepository:
         if self.use_db:
             try:
                 trips = self.db.query(Trip).all()
-                return [trip.to_dict() for trip in trips]
+                return [self._serialize_trip(trip) for trip in trips]
             except Exception as e:
                 logger.warning(f"Database query failed, falling back to JSON: {e}")
                 self.use_db = False
@@ -73,7 +73,7 @@ class TripRepository:
             try:
                 trip = self.db.query(Trip).filter(Trip.id == trip_id).first()
                 if trip:
-                    return trip.to_dict()
+                    return self._serialize_trip(trip)
             except Exception as e:
                 logger.warning(f"Database query failed, falling back to JSON: {e}")
                 self.use_db = False
@@ -89,11 +89,11 @@ class TripRepository:
                 db_trip = Trip(
                     trip_start_date=trip_data.trip_start_date,
                     estimated_end_date=trip_data.estimated_end_date,
-                    vehicle_number=trip_data.vehicle_number,
-                    driver_name=trip_data.driver_name,
-                    partner=trip_data.partner,
-                    purchase_place=trip_data.purchase_place,
-                    item_name=trip_data.item_name,
+                    vehicle_id=trip_data.vehicle_id,
+                    driver_id=trip_data.driver_id,
+                    purchase_place_id=trip_data.purchase_place_id,
+                    item_id=trip_data.item_id,
+                    partner_id=trip_data.partner_id,
                     starting_km=trip_data.starting_km,
                     ending_km=trip_data.ending_km,
                     distance=trip_data.distance,
@@ -101,19 +101,20 @@ class TripRepository:
                     rate_per_ton=trip_data.rate_per_ton,
                     freight=trip_data.freight,
                     expenses=trip_data.expenses or {},
-                    total_expenses=trip_data.total_expenses or 0.0,
-                    revenue=trip_data.revenue or 0.0,
-                    profit=trip_data.profit or 0.0,
+                    total_expenses=trip_data.total_expenses,
+                    revenue=trip_data.revenue,
+                    profit=trip_data.profit,
                     status=trip_data.status,
                     locked=trip_data.locked,
                     amount_given_to_driver=trip_data.amount_given_to_driver,
                     notes=trip_data.notes,
+                    is_active=trip_data.is_active,
                     created_by=created_by
                 )
                 self.db.add(db_trip)
                 self.db.commit()
                 self.db.refresh(db_trip)
-                return db_trip.to_dict()
+                return self._serialize_trip(db_trip)
             except Exception as e:
                 logger.error(f"Database create failed: {e}")
                 self.db.rollback()
@@ -132,36 +133,11 @@ class TripRepository:
                 
                 update_data = trip_data.model_dump(exclude_unset=True)
                 for key, value in update_data.items():
-                    # Convert camelCase to snake_case
-                    db_key = key
-                    if key == "tripStartDate":
-                        db_key = "trip_start_date"
-                    elif key == "estimatedEndDate":
-                        db_key = "estimated_end_date"
-                    elif key == "vehicleNumber":
-                        db_key = "vehicle_number"
-                    elif key == "driverName":
-                        db_key = "driver_name"
-                    elif key == "purchasePlace":
-                        db_key = "purchase_place"
-                    elif key == "itemName":
-                        db_key = "item_name"
-                    elif key == "startingKm":
-                        db_key = "starting_km"
-                    elif key == "endingKm":
-                        db_key = "ending_km"
-                    elif key == "ratePerTon":
-                        db_key = "rate_per_ton"
-                    elif key == "totalExpenses":
-                        db_key = "total_expenses"
-                    elif key == "amountGivenToDriver":
-                        db_key = "amount_given_to_driver"
-                    
-                    setattr(db_trip, db_key, value)
+                    setattr(db_trip, key, value)
                 
                 self.db.commit()
                 self.db.refresh(db_trip)
-                return db_trip.to_dict()
+                return self._serialize_trip(db_trip)
             except Exception as e:
                 logger.error(f"Database update failed: {e}")
                 self.db.rollback()
@@ -187,4 +163,35 @@ class TripRepository:
         
         # If no database, raise error
         raise Exception("Database not available for deleting trips")
+
+    def _serialize_trip(self, trip: Trip) -> Dict[str, Any]:
+        return {
+            "id": trip.id,
+            "trip_start_date": trip.trip_start_date,
+            "estimated_end_date": trip.estimated_end_date,
+            "vehicle_id": trip.vehicle_id,
+            "driver_id": trip.driver_id,
+            "purchase_place_id": trip.purchase_place_id,
+            "item_id": trip.item_id,
+            "partner_id": trip.partner_id,
+            "starting_km": trip.starting_km,
+            "ending_km": trip.ending_km,
+            "distance": trip.distance,
+            "tonnage": trip.tonnage,
+            "rate_per_ton": trip.rate_per_ton,
+            "freight": trip.freight,
+            "expenses": trip.expenses,
+            "total_expenses": trip.total_expenses,
+            "revenue": trip.revenue,
+            "profit": trip.profit,
+            "status": trip.status,
+            "locked": trip.locked,
+            "amount_given_to_driver": trip.amount_given_to_driver,
+            "notes": trip.notes,
+            "is_active": trip.is_active,
+            "created_at": trip.created_at,
+            "updated_at": trip.updated_at,
+            "created_by": trip.created_by,
+            "updated_by": trip.updated_by,
+        }
 

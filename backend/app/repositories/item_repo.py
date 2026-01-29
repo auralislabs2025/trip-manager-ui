@@ -1,6 +1,8 @@
 from app.models.item import Item
 from app.schemas.item import ItemCreate
 from fastapi import HTTPException
+from sqlalchemy import or_, func
+from typing import Optional
 import logging
 
 logger = logging.getLogger(__name__)
@@ -10,8 +12,17 @@ def get_item_by_id(db, item_id: str):
     return db.query(Item).filter(Item.id == item_id).first()
 
 
-def get_items(db):
-    return db.query(Item).filter(Item.is_active == True).all()
+def get_items(db, search: Optional[str] = None):
+    query = db.query(Item).filter(Item.is_active == True)
+    search_value = (search or "").strip().lower()
+    if search_value:
+        query = query.filter(
+            or_(
+                func.lower(Item.name).contains(search_value),
+                func.lower(Item.description).contains(search_value),
+            )
+        )
+    return query.all()
 
 
 def create_item(db, item: ItemCreate):

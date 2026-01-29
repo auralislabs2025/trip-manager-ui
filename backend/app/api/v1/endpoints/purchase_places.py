@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends
+from typing import Optional
 from app.api.deps import get_db
 from app.schemas.purchase_place import (
     PurchasePlaceCreate,
@@ -17,8 +18,11 @@ router = APIRouter()
 
 
 @router.get("/", response_model=list[PurchasePlaceResponse])
-def get_all_purchase_places(db = Depends(get_db)):
-    purchase_places = get_purchase_places(db)
+def get_all_purchase_places(
+    search: Optional[str] = None,
+    db = Depends(get_db)
+):
+    purchase_places = get_purchase_places(db, search=search)
     return purchase_places
 
 

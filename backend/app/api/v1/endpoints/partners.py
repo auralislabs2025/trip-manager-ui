@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends
+from typing import Optional
 from app.api.deps import get_db
 from app.schemas.partner import PartnerCreate, PartnerResponse, PartnerUpdate
 from app.repositories.partner_repo import (
@@ -13,8 +14,11 @@ router = APIRouter()
 
 
 @router.get("/", response_model=list[PartnerResponse])
-def get_all_partners(db = Depends(get_db)):
-    partners = get_partners(db)
+def get_all_partners(
+    search: Optional[str] = None,
+    db = Depends(get_db)
+):
+    partners = get_partners(db, search=search)
     return partners
 
 

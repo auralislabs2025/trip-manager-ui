@@ -1,7 +1,8 @@
 from app.models.driver import Driver
-from app.schemas.driver import  DriverCreate 
-import json
+from app.schemas.driver import DriverCreate
 from fastapi import HTTPException
+from sqlalchemy import or_, func
+from typing import Optional
 import logging
 
 logger = logging.getLogger(__name__)
@@ -9,8 +10,18 @@ logger = logging.getLogger(__name__)
 def get_driver_by_id(db, driver_id: str):
     return db.query(Driver).filter(Driver.id == driver_id).first()
 
-def get_drivers(db):
-    return db.query(Driver).filter(Driver.is_active == True).all()
+def get_drivers(db, search: Optional[str] = None):
+    query = db.query(Driver).filter(Driver.is_active == True)
+    search_value = (search or "").strip().lower()
+    if search_value:
+        query = query.filter(
+            or_(
+                func.lower(Driver.name).contains(search_value),
+                func.lower(Driver.phone).contains(search_value),
+                func.lower(Driver.license_number).contains(search_value),
+            )
+        )
+    return query.all()
 
 def create_driver(db, driver: DriverCreate):
     driver = Driver(**driver.model_dump())

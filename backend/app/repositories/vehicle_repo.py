@@ -1,6 +1,8 @@
 from app.models.vehicle import Vehicle
 from app.schemas.vehicle import VehicleCreate
 from fastapi import HTTPException
+from sqlalchemy import or_, func
+from typing import Optional
 import logging
 
 logger = logging.getLogger(__name__)
@@ -10,8 +12,18 @@ def get_vehicle_by_id(db, vehicle_id: str):
     return db.query(Vehicle).filter(Vehicle.id == vehicle_id).first()
 
 
-def get_vehicles(db):
-    return db.query(Vehicle).filter(Vehicle.is_active == True).all()
+def get_vehicles(db, search: Optional[str] = None):
+    query = db.query(Vehicle).filter(Vehicle.is_active == True)
+    search_value = (search or "").strip().lower()
+    if search_value:
+        query = query.filter(
+            or_(
+                func.lower(Vehicle.vehicle_number).contains(search_value),
+                func.lower(Vehicle.vehicle_type).contains(search_value),
+                func.lower(Vehicle.current_driver_name).contains(search_value),
+            )
+        )
+    return query.all()
 
 
 def create_vehicle(db, vehicle: VehicleCreate):

@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends
+from typing import Optional
 from app.api.deps import get_db
 from app.schemas.item import ItemCreate, ItemResponse, ItemUpdate
 from app.repositories.item_repo import (
@@ -13,8 +14,11 @@ router = APIRouter()
 
 
 @router.get("/", response_model=list[ItemResponse])
-def get_all_items(db = Depends(get_db)):
-    items = get_items(db)
+def get_all_items(
+    search: Optional[str] = None,
+    db = Depends(get_db)
+):
+    items = get_items(db, search=search)
     return items
 
 

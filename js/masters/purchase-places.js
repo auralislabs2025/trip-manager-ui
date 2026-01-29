@@ -3,6 +3,8 @@
 let gridApi;
 let currentPurchasePlaceId = null;
 let isEditMode = false;
+let currentSearchTerm = '';
+let searchDebounceTimer = null;
 
 // Initialize page
 document.addEventListener('DOMContentLoaded', function() {
@@ -63,12 +65,15 @@ function setupEventListeners() {
         confirmDelete();
     });
     
-    // Search input
+    // Search input (server-side)
     document.getElementById('searchInput').addEventListener('input', (e) => {
-        const searchTerm = e.target.value;
-        if (gridApi) {
-            gridApi.setGridOption('quickFilterText', searchTerm);
+        currentSearchTerm = e.target.value || '';
+        if (searchDebounceTimer) {
+            clearTimeout(searchDebounceTimer);
         }
+        searchDebounceTimer = setTimeout(() => {
+            loadPurchasePlaces();
+        }, 300);
     });
     
     // Active filter toggle
@@ -132,7 +137,8 @@ async function loadPurchasePlaces() {
         const params = {
             page: 1,
             page_size: 1000,
-            is_active: activeFilter ? true : undefined
+            is_active: activeFilter ? true : undefined,
+            search: currentSearchTerm.trim() || undefined
         };
         
         const response = await MastersAPI.getAll('purchase-places', params);
