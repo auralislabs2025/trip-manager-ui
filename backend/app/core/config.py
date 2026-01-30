@@ -5,6 +5,9 @@ class Settings(BaseSettings):
     # App
     APP_NAME: str
     DEBUG: bool
+    LOG_LEVEL: str
+    APP_ENV: str
+
 
     # Database
     POSTGRES_HOST: str
@@ -26,5 +29,12 @@ class Settings(BaseSettings):
         env_file = ".env"
         env_prefix = "TRIP_TRACKER_"
         env_file_encoding = "utf-8"
+    @property
+    def is_production(self) -> bool:
+        return self.APP_ENV == "production"
+
+    @property
+    def is_development(self) -> bool:
+        return self.APP_ENV == "development"
 
 settings = Settings() 

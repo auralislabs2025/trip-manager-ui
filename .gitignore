@@ -6,6 +6,11 @@ node_modules/
 .env.local
 .env.*.local
 
+# Logs
+logs/
+*.log
+
+
 # Backend specific .env (explicit)
 backend/.env
 

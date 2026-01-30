@@ -11,7 +11,7 @@ def get_driver_by_id(db, driver_id: str):
     return db.query(Driver).filter(Driver.id == driver_id).first()
 
 def get_drivers(db, search: Optional[str] = None):
-    query = db.query(Driver).filter(Driver.is_active == True)
+    query = db.query(Driver)
     search_value = (search or "").strip().lower()
     if search_value:
         query = query.filter(

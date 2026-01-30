@@ -3,6 +3,8 @@ from typing import Optional
 from app.api.deps import get_db
 from app.schemas.driver import DriverCreate, DriverResponse, DriverUpdate
 from app.repositories.driver_repo import get_drivers, create_driver, get_driver, delete_driver, update_driver
+import logging
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -12,6 +14,7 @@ def get_all_drivers(
     search: Optional[str] = None,
     db = Depends(get_db)
 ):
+    logger.info("Logging system initialized")
     drivers = get_drivers(db, search=search)
     return drivers
 
