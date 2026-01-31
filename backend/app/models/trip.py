@@ -51,7 +51,6 @@ class Trip(Base, AuditMixin):
     freight = Column(Float, nullable=True)
 
     # Financials
-    expenses = Column(JSON, nullable=True, default=dict)
     total_expenses = Column(Float, nullable=False, default=0.0)
     revenue = Column(Float, nullable=False, default=0.0)
     profit = Column(Float, nullable=False, default=0.0)

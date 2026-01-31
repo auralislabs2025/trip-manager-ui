@@ -8,3 +8,5 @@ from app.models.driver import Driver
 from app.models.partner import Partner
 from app.models.purchase_place import PurchasePlace
 from app.models.item import Item
+from app.models.expense import Expense
+from app.models.trip_expense import TripExpense
