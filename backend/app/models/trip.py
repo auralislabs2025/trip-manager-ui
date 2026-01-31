@@ -41,6 +41,18 @@ class Trip(Base, AuditMixin):
     item = relationship("Item", back_populates="trips")
     partner = relationship("Partner", back_populates="trips")
 
+    trip_expenses = relationship(
+        "TripExpense",
+        back_populates="trip",
+        cascade="all, delete-orphan"
+    )
+    expenses = relationship(
+        "Expense",
+        secondary="trip_expenses",
+        back_populates="trips",
+        overlaps="trip_expenses,trip,expense"
+    )
+
     # Trip Metrics
     starting_km = Column(Float, nullable=True)
     ending_km = Column(Float, nullable=True)

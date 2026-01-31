@@ -13,7 +13,7 @@ def get_purchase_place_by_id(db, purchase_place_id: str):
 
 
 def get_purchase_places(db, search: Optional[str] = None):
-    query = db.query(PurchasePlace).filter(PurchasePlace.is_active == True)
+    query = db.query(PurchasePlace)
     search_value = (search or "").strip().lower()
     if search_value:
         query = query.filter(

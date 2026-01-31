@@ -13,7 +13,7 @@ def get_item_by_id(db, item_id: str):
 
 
 def get_items(db, search: Optional[str] = None):
-    query = db.query(Item).filter(Item.is_active == True)
+    query = db.query(Item)
     search_value = (search or "").strip().lower()
     if search_value:
         query = query.filter(
