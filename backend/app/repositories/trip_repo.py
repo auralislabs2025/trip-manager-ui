@@ -1,11 +1,11 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session,joinedload
 from app.models.trip import Trip
 from app.schemas.trip import TripCreate, TripUpdate
 from typing import List, Optional, Dict, Any
 from pathlib import Path
 import json
 import logging
-
+from app.models.trip_expense import TripExpense
 logger = logging.getLogger(__name__)
 
 # Path to JSON file as fallback
@@ -54,74 +54,54 @@ class TripRepository:
         self.db = db
         self.use_db = db is not None
 
-    def get_all(self) -> List[Dict[str, Any]]:
+    def get_all(self, page: int = 1, page_size: int = 10) -> Dict[str, Any]:
         """Get all trips - from database if available, else from JSON"""
         if self.use_db:
             try:
-                trips = self.db.query(Trip).all()
-                return [self._serialize_trip(trip) for trip in trips]
-            except Exception as e:
-                logger.warning(f"Database query failed, falling back to JSON: {e}")
-                self.use_db = False
-        
-        # Fallback to JSON
-        return read_trips_from_json()
-
-    def get_by_id(self, trip_id: str) -> Optional[Dict[str, Any]]:
-        """Get trip by ID - from database if available, else from JSON"""
-        if self.use_db:
-            try:
-                trip = self.db.query(Trip).filter(Trip.id == trip_id).first()
-                if trip:
-                    return self._serialize_trip(trip)
-            except Exception as e:
-                logger.warning(f"Database query failed, falling back to JSON: {e}")
-                self.use_db = False
-        
-        # Fallback to JSON
-        trips = read_trips_from_json()
-        return next((t for t in trips if t.get("id") == trip_id), None)
-
-    def create(self, trip_data: TripCreate, created_by: Optional[str] = None) -> Dict[str, Any]:
-        """Create a new trip"""
-        if self.use_db:
-            try:
-                db_trip = Trip(
-                    trip_start_date=trip_data.trip_start_date,
-                    estimated_end_date=trip_data.estimated_end_date,
-                    vehicle_id=trip_data.vehicle_id,
-                    driver_id=trip_data.driver_id,
-                    purchase_place_id=trip_data.purchase_place_id,
-                    item_id=trip_data.item_id,
-                    partner_id=trip_data.partner_id,
-                    starting_km=trip_data.starting_km,
-                    ending_km=trip_data.ending_km,
-                    distance=trip_data.distance,
-                    tonnage=trip_data.tonnage,
-                    rate_per_ton=trip_data.rate_per_ton,
-                    freight=trip_data.freight,
-                    expenses=trip_data.expenses or {},
-                    total_expenses=trip_data.total_expenses,
-                    revenue=trip_data.revenue,
-                    profit=trip_data.profit,
-                    status=trip_data.status,
-                    locked=trip_data.locked,
-                    amount_given_to_driver=trip_data.amount_given_to_driver,
-                    notes=trip_data.notes,
-                    is_active=trip_data.is_active,
-                    created_by=created_by
+                query = (
+                    self.db.query(Trip)
+                    .filter(Trip.is_active == True)
+                    .options(
+                        joinedload(Trip.vehicle),
+                        joinedload(Trip.driver),
+                        joinedload(Trip.purchase_place),
+                        joinedload(Trip.item),
+                        joinedload(Trip.partner),
+                        joinedload(Trip.trip_expenses)
+                            .joinedload(TripExpense.expense)
+                    )
                 )
-                self.db.add(db_trip)
-                self.db.commit()
-                self.db.refresh(db_trip)
-                return self._serialize_trip(db_trip)
+                total = query.count()
+                offset = (page - 1) * page_size
+                trips = query.offset(offset).limit(page_size).all()
+                return {
+                    "items": [self._serialize_trip(trip) for trip in trips],
+                    "total": total,
+                    "page": page,
+                    "page_size": page_size,
+                }
             except Exception as e:
-                logger.error(f"Database create failed: {e}")
-                self.db.rollback()
-                raise
-        
-        # If no database, raise error (can't create without DB)
-        raise Exception("Database not available for creating trips")
+                logger.warning(f"Database query failed, falling back to JSON: {e}")
+                self.use_db = False
+
+        trips = read_trips_from_json()
+        total = len(trips)
+        offset = (page - 1) * page_size
+        return {
+            "items": trips[offset:offset + page_size],
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+        }
+    
+    def get_by_id(self, trip_id: str) -> Trip | None:
+        return self.db.query(Trip).filter(Trip.id == trip_id).first()
+
+    def create(self, trip: Trip) -> Trip:
+        """Create a new trip"""
+        self.db.add(trip)
+        self.db.flush()
+        return trip
 
     def update(self, trip_id: str, trip_data: TripUpdate) -> Optional[Dict[str, Any]]:
         """Update an existing trip"""
@@ -153,7 +133,7 @@ class TripRepository:
                 db_trip = self.db.query(Trip).filter(Trip.id == trip_id).first()
                 if not db_trip:
                     return False
-                self.db.delete(db_trip)
+                db_trip.is_active = False
                 self.db.commit()
                 return True
             except Exception as e:
@@ -165,6 +145,20 @@ class TripRepository:
         raise Exception("Database not available for deleting trips")
 
     def _serialize_trip(self, trip: Trip) -> Dict[str, Any]:
+        expense_items = []
+        expenses_map = {}
+        if getattr(trip, "trip_expenses", None):
+            for trip_expense in trip.trip_expenses:
+                expense_name = trip_expense.expense.name if trip_expense.expense else None
+                expense_items.append({
+                    "expense_id": trip_expense.expense_id,
+                    "expense_name": expense_name,
+                    "amount": trip_expense.amount,
+                })
+                if expense_name:
+                    key = expense_name.strip().lower().replace(" ", "_")
+                    expenses_map[key] = trip_expense.amount
+
         return {
             "id": trip.id,
             "trip_start_date": trip.trip_start_date,
@@ -179,8 +173,8 @@ class TripRepository:
             "distance": trip.distance,
             "tonnage": trip.tonnage,
             "rate_per_ton": trip.rate_per_ton,
-            "freight": trip.freight,
-            "expenses": trip.expenses,
+            "expenses": expenses_map,
+            "expense_items": expense_items,
             "total_expenses": trip.total_expenses,
             "revenue": trip.revenue,
             "profit": trip.profit,

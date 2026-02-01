@@ -1,15 +1,7 @@
 from pydantic import BaseModel
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from datetime import datetime
 
-class ExpenseBreakdown(BaseModel):
-    food: float = 0.0
-    diesel: float = 0.0
-    toll: float = 0.0
-    salary: float = 0.0
-    gst: float = 0.0
-    other: float = 0.0
-    other_description: Optional[str] = None
 
 class TripBase(BaseModel):
     trip_start_date: str
@@ -24,8 +16,7 @@ class TripBase(BaseModel):
     distance: Optional[float] = None
     tonnage: Optional[float] = None
     rate_per_ton: Optional[float] = None
-    freight: Optional[float] = None
-    expenses: Optional[Dict[str, Any]] = {}
+    expense_items: Optional[List[Dict[str, Any]]] = None
     total_expenses: float = 0.0
     revenue: float = 0.0
     profit: float = 0.0
@@ -51,8 +42,7 @@ class TripUpdate(BaseModel):
     distance: Optional[float] = None
     tonnage: Optional[float] = None
     rate_per_ton: Optional[float] = None
-    freight: Optional[float] = None
-    expenses: Optional[Dict[str, Any]] = None
+    expense_items: Optional[List[Dict[str, Any]]] = None
     total_expenses: Optional[float] = None
     revenue: Optional[float] = None
     profit: Optional[float] = None

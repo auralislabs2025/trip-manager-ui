@@ -60,7 +60,6 @@ class Trip(Base, AuditMixin):
 
     tonnage = Column(Float, nullable=True)
     rate_per_ton = Column(Float, nullable=True)
-    freight = Column(Float, nullable=True)
 
     # Financials
     total_expenses = Column(Float, nullable=False, default=0.0)
