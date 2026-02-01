@@ -1333,11 +1333,14 @@ async function saveRowAG(tripId) {
         }
         
         const updatedTrip = normalizeTripFromApi(response);
-        Object.assign(rowNode.data, updatedTrip);
-        rowNode.data.locked = updatedTrip.status === 'closed';
-        rowNode.data._originalTrip = null;
-        gridApi.refreshCells({ rowNodes: [rowNode], force: true });
-        await loadTripsData();
+        if (trip.id.startsWith('trip_new_')) {
+            await loadTripsData();
+        } else {
+            Object.assign(rowNode.data, updatedTrip);
+            rowNode.data.locked = updatedTrip.status === 'closed';
+            rowNode.data._originalTrip = null;
+            gridApi.refreshCells({ rowNodes: [rowNode], force: true });
+        }
         utils.showToast('Trip saved successfully', 'success');
     } catch (error) {
         console.error('Error saving trip:', error);
