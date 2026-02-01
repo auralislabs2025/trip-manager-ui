@@ -19,9 +19,12 @@ let masterData = {
     partnerNameToId: {},
     partnerIdToName: {}
 };
-let expenseTypes = ['Food', 'Diesel', 'Toll', 'Salary', 'GST', 'Other'];
+let expenseTypes = [];
+let expenseNameToId = {};
+let expenseIdToName = {};
 let currentExpenseBreakdownRow = null;
 let mastersReady = false;
+let expensesReady = false;
 
 // Initialize AG Grid
 function initTripsTableAGGrid() {
@@ -33,6 +36,7 @@ function initTripsTableAGGrid() {
     }
     
     loadMasterData();
+    loadExpenseMaster();
     
     const gridOptions = {
         // Data
@@ -74,8 +78,8 @@ function initTripsTableAGGrid() {
         
         // Pagination
         pagination: true,
-        paginationPageSize: 20,
-        paginationPageSizeSelector: [10, 20, 50, 100],
+        paginationPageSize: 10,
+        paginationPageSizeSelector: [10],
         
         // Row styling
         getRowStyle: (params) => {
@@ -216,6 +220,58 @@ function initTripsTableAGGrid() {
     }
 }
 
+function expenseKeyFromName(name) {
+    return (name || '')
+        .toString()
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, '_');
+}
+
+async function loadExpenseMaster() {
+    const baseUrl = window.config?.API_BASE_URL || 'http://localhost:8000/api/v1';
+    const expensesUrl = `${baseUrl}/masters/expenses`;
+
+    try {
+        let data;
+        if (window.api && typeof window.api.get === 'function') {
+            const response = await window.api.get('/masters/expenses');
+            if (!response.success) {
+                throw new Error(response.error || `API request failed: ${response.status}`);
+            }
+            data = response.data;
+        } else {
+            const response = await fetch(expensesUrl);
+            if (!response.ok) {
+                throw new Error(`Failed to load expenses: ${response.status}`);
+            }
+            data = await response.json();
+        }
+
+        expenseNameToId = {};
+        expenseIdToName = {};
+        const list = (data.items || data || [])
+            .map(expense => {
+                if (!expense?.name) return null;
+                expenseNameToId[expense.name] = expense.id || null;
+                if (expense.id) {
+                    expenseIdToName[expense.id] = expense.name;
+                }
+                return expense.name;
+            })
+            .filter(Boolean);
+
+        expenseTypes = Array.from(new Set(list));
+        expensesReady = true;
+    } catch (error) {
+        console.warn('Expense master unavailable:', error);
+        expenseTypes = [];
+        expenseNameToId = {};
+        expenseIdToName = {};
+        expensesReady = false;
+    }
+}
+
 function normalizeMasterName(value) {
     return (value || '').toString().trim();
 }
@@ -231,6 +287,32 @@ function setMasterMaps() {
     masterData.purchasePlaceIdToName = {};
     masterData.partnerNameToId = {};
     masterData.partnerIdToName = {};
+}
+
+function normalizeTripFromApi(trip) {
+    const normalized = { ...trip };
+    normalized.tripStartDate = trip.tripStartDate || trip.trip_start_date || '';
+    normalized.estimatedEndDate = trip.estimatedEndDate || trip.estimated_end_date || '';
+    normalized.vehicleId = trip.vehicleId || trip.vehicle_id || null;
+    normalized.driverId = trip.driverId || trip.driver_id || null;
+    normalized.purchasePlaceId = trip.purchasePlaceId || trip.purchase_place_id || null;
+    normalized.itemId = trip.itemId || trip.item_id || null;
+    normalized.partnerId = trip.partnerId || trip.partner_id || null;
+    normalized.startingKm = trip.startingKm ?? trip.starting_km ?? '';
+    normalized.closingKm = trip.closingKm ?? trip.ending_km ?? '';
+    normalized.distance = trip.distance ?? '';
+    normalized.tonnage = trip.tonnage ?? '';
+    normalized.ratePerTon = trip.ratePerTon ?? trip.rate_per_ton ?? '';
+    normalized.freight = trip.freight ?? '';
+    normalized.amountGivenToDriver = trip.amountGivenToDriver ?? trip.amount_given_to_driver ?? '';
+    normalized.totalExpenses = trip.totalExpenses ?? trip.total_expenses ?? 0;
+    normalized.revenue = trip.revenue ?? 0;
+    normalized.profit = trip.profit ?? 0;
+    normalized.status = trip.status ?? 'draft';
+    normalized.locked = trip.locked ?? (normalized.status === 'closed');
+    normalized.expenses = trip.expenses || {};
+    normalized.expense_items = trip.expense_items || [];
+    return normalized;
 }
 
 function applyMasterMappingsToTrip(trip) {
@@ -366,28 +448,12 @@ async function loadMasterData() {
             gridApi.refreshCells({ force: true });
         }
     } catch (error) {
-        console.warn('Master API unavailable, falling back to local storage:', error);
-
-        setMasterMaps();
-
-        const vehicles = storage.VehicleStorage.getAll();
-        const drivers = storage.DriverStorage.getAll();
-        
-        masterData.vehicles = vehicles.map(v => normalizeMasterName(v.vehicleNumber || v.name || v)).filter(Boolean);
-        masterData.drivers = drivers.map(d => normalizeMasterName(d.name || d)).filter(Boolean);
-        
-        const trips = storage.TripStorage.getAll();
-        const itemsSet = new Set();
-        const purchasePlacesSet = new Set();
-        const partnersSet = new Set();
-        trips.forEach(trip => {
-            if (trip.itemName && trip.itemName !== '__ADD_NEW__') itemsSet.add(normalizeMasterName(trip.itemName));
-            if (trip.purchasePlace && trip.purchasePlace !== '__ADD_NEW__') purchasePlacesSet.add(normalizeMasterName(trip.purchasePlace));
-            if (trip.partner && trip.partner !== '__ADD_NEW__') partnersSet.add(normalizeMasterName(trip.partner));
-        });
-        masterData.items = Array.from(itemsSet);
-        masterData.purchasePlaces = Array.from(purchasePlacesSet);
-        masterData.partners = Array.from(partnersSet);
+        console.warn('Master API unavailable:', error);
+        masterData.vehicles = [];
+        masterData.drivers = [];
+        masterData.items = [];
+        masterData.purchasePlaces = [];
+        masterData.partners = [];
     }
 }
 
@@ -803,9 +869,7 @@ function getColumnDefs() {
                 const totalExpenses = trip.totalExpenses || 0;
                 
                 // Check if any expenses are set
-                const hasExpenses = totalExpenses > 0 || 
-                    expenses.food > 0 || expenses.diesel > 0 || expenses.toll > 0 || 
-                    expenses.salary > 0 || expenses.gst > 0 || expenses.other > 0;
+                const hasExpenses = totalExpenses > 0 || Object.values(expenses).some(value => (parseFloat(value) || 0) > 0);
                 
                 const isSmall = window.innerWidth < 1024;
                 const buttonPadding = isSmall ? '4px 8px' : '6px 12px';
@@ -973,37 +1037,52 @@ async function loadTripsData() {
     try {
         // Try to fetch from API first - use api helper if available, otherwise direct fetch
         let trips;
+        let page = 1;
+        let pageSize = 20;
+        if (gridApi && typeof gridApi.paginationGetCurrentPage === 'function') {
+            page = (gridApi.paginationGetCurrentPage() || 0) + 1;
+        }
+        if (gridApi && typeof gridApi.paginationGetPageSize === 'function') {
+            pageSize = gridApi.paginationGetPageSize() || 20;
+        }
         
         if (window.api && typeof window.api.get === 'function') {
             // Use authenticated API helper
-            const response = await window.api.get('/trips/');
+            const response = await window.api.get(`/trips/?page=${page}&page_size=${pageSize}`);
             if (response.success) {
-                trips = response.data;
+                trips = response.data?.items || [];
             } else {
                 throw new Error(response.error || `API request failed: ${response.status}`);
             }
         } else {
             // Fallback to direct fetch
-            const response = await fetch(`${API_BASE_URL}/trips/`);
+            const response = await fetch(`${API_BASE_URL}/trips/?page=${page}&page_size=${pageSize}`);
             
             if (!response.ok) {
                 throw new Error(`API request failed: ${response.status}`);
             }
             
-            trips = await response.json();
+            const data = await response.json();
+            trips = data?.items || [];
         }
         
         // If API returns empty array or no data, fallback to LocalStorage
         if (!trips || trips.length === 0) {
-            console.log('No trips from API, trying LocalStorage fallback');
-            loadTripsDataFromStorage();
+            if (typeof gridApi.setRowData === 'function') {
+                gridApi.setRowData([]);
+            } else if (typeof gridApi.setGridOption === 'function') {
+                gridApi.setGridOption('rowData', []);
+            }
+            console.log('No trips returned from API');
             return;
         }
+
+        trips = trips.map(normalizeTripFromApi);
         
         // Sort by date (newest first)
         trips.sort((a, b) => {
-            const dateA = new Date(a.tripStartDate || a.createdAt || 0);
-            const dateB = new Date(b.tripStartDate || b.createdAt || 0);
+            const dateA = new Date(a.tripStartDate || a.created_at || 0);
+            const dateB = new Date(b.tripStartDate || b.created_at || 0);
             return dateB - dateA;
         });
         
@@ -1032,54 +1111,13 @@ async function loadTripsData() {
         
     } catch (error) {
         console.error('Error fetching trips from API:', error);
-        console.log('Falling back to LocalStorage');
-        // Fallback to LocalStorage if API fails
-        loadTripsDataFromStorage();
-    }
-}
-
-// Load trips data from LocalStorage (fallback)
-function loadTripsDataFromStorage() {
-    // Safety check - ensure gridApi is ready
-    if (!gridApi) {
-        console.error('Grid API not available in fallback function');
-        return;
-    }
-    
-    const trips = storage.TripStorage.getAll();
-    
-    // Set locked status for closed trips
-    const tripsWithLocked = trips.length === 0 ? [] : trips.map(trip => {
-        const mergedTrip = {
-            ...trip,
-            locked: trip.status === 'closed'
-        };
-        if (mastersReady) {
-            applyMasterMappingsToTrip(mergedTrip);
+        utils.showToast('Failed to load trips from API', 'error');
+        if (typeof gridApi.setRowData === 'function') {
+            gridApi.setRowData([]);
+        } else if (typeof gridApi.setGridOption === 'function') {
+            gridApi.setGridOption('rowData', []);
         }
-        return mergedTrip;
-    });
-    
-    if (trips.length > 0) {
-        // Sort by date (newest first)
-        tripsWithLocked.sort((a, b) => {
-            const dateA = new Date(a.tripStartDate || a.createdAt || 0);
-            const dateB = new Date(b.tripStartDate || b.createdAt || 0);
-            return dateB - dateA;
-        });
     }
-    
-    // Use setRowData if available, otherwise use setGridOption
-    if (typeof gridApi.setRowData === 'function') {
-        gridApi.setRowData(tripsWithLocked);
-    } else if (typeof gridApi.setGridOption === 'function') {
-        gridApi.setGridOption('rowData', tripsWithLocked);
-    } else {
-        console.error('Cannot set row data in fallback - no suitable method found');
-        return;
-    }
-    
-    console.log(`Loaded ${trips.length} trips from LocalStorage`);
 }
 
 // Handle cell value changed
@@ -1230,7 +1268,7 @@ function addNewRow() {
 }
 
 // Save row
-function saveRowAG(tripId) {
+async function saveRowAG(tripId) {
     if (!gridApi) return;
     
     const rowNode = gridApi.getRowNode(tripId);
@@ -1245,43 +1283,64 @@ function saveRowAG(tripId) {
     }
     
     // Prepare trip data for saving
-    const tripData = {
-        id: trip.id.startsWith('trip_new_') ? null : trip.id,
-        tripStartDate: trip.tripStartDate,
-        estimatedEndDate: trip.estimatedEndDate || null,
-        vehicleNumber: trip.vehicleNumber,
-        driverName: trip.driverName,
-        partner: trip.partner || null,
-        purchasePlace: trip.purchasePlace,
-        itemName: trip.itemName,
-        vehicleId: trip.vehicleId || masterData.vehicleNameToId[normalizeMasterName(trip.vehicleNumber)] || null,
-        driverId: trip.driverId || masterData.driverNameToId[normalizeMasterName(trip.driverName)] || null,
-        partnerId: trip.partnerId || masterData.partnerNameToId[normalizeMasterName(trip.partner)] || null,
-        purchasePlaceId: trip.purchasePlaceId || masterData.purchasePlaceNameToId[normalizeMasterName(trip.purchasePlace)] || null,
-        itemId: trip.itemId || masterData.itemNameToId[normalizeMasterName(trip.itemName)] || null,
-        startingKm: parseFloat(trip.startingKm) || 0,
-        closingKm: parseFloat(trip.closingKm) || 0,
+    const payload = {
+        trip_start_date: trip.tripStartDate,
+        estimated_end_date: trip.estimatedEndDate || null,
+        vehicle_id: trip.vehicleId || masterData.vehicleNameToId[normalizeMasterName(trip.vehicleNumber)] || null,
+        driver_id: trip.driverId || masterData.driverNameToId[normalizeMasterName(trip.driverName)] || null,
+        partner_id: trip.partnerId || masterData.partnerNameToId[normalizeMasterName(trip.partner)] || null,
+        purchase_place_id: trip.purchasePlaceId || masterData.purchasePlaceNameToId[normalizeMasterName(trip.purchasePlace)] || null,
+        item_id: trip.itemId || masterData.itemNameToId[normalizeMasterName(trip.itemName)] || null,
+        expense_items: trip.expense_items || [],
+        starting_km: parseFloat(trip.startingKm) || 0,
+        ending_km: parseFloat(trip.closingKm) || 0,
         tonnage: parseFloat(trip.tonnage) || 0,
-        ratePerTon: parseFloat(trip.ratePerTon) || 0,
-        amountGivenToDriver: parseFloat(trip.amountGivenToDriver) || 0,
+        rate_per_ton: parseFloat(trip.ratePerTon) || 0,
+        amount_given_to_driver: parseFloat(trip.amountGivenToDriver) || 0,
         expenses: trip.expenses || {},
-        totalExpenses: parseFloat(trip.totalExpenses) || 0,
+        total_expenses: parseFloat(trip.totalExpenses) || 0,
         revenue: parseFloat(trip.revenue) || 0,
         profit: parseFloat(trip.profit) || 0,
         status: 'closed'
     };
     
-    if (storage.TripStorage.save(tripData)) {
-        // Update the row
-        trip.id = tripData.id;
-        trip.status = 'closed';
-        trip.locked = true;
+    try {
+        let response;
+        if (window.api && typeof window.api.post === 'function') {
+            if (trip.id.startsWith('trip_new_')) {
+                response = await window.api.post('/trips/', payload);
+            } else {
+                response = await window.api.put(`/trips/${trip.id}`, payload);
+            }
+            if (!response.success) {
+                throw new Error(response.error || 'API request failed');
+            }
+            response = response.data;
+        } else {
+            const url = trip.id.startsWith('trip_new_')
+                ? `${API_BASE_URL}/trips/`
+                : `${API_BASE_URL}/trips/${trip.id}`;
+            const method = trip.id.startsWith('trip_new_') ? 'POST' : 'PUT';
+            const apiResponse = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!apiResponse.ok) {
+                throw new Error(`API request failed: ${apiResponse.status}`);
+            }
+            response = await apiResponse.json();
+        }
         
-        // Refresh the row
+        const updatedTrip = normalizeTripFromApi(response);
+        Object.assign(rowNode.data, updatedTrip);
+        rowNode.data.locked = updatedTrip.status === 'closed';
+        rowNode.data._originalTrip = null;
         gridApi.refreshCells({ rowNodes: [rowNode], force: true });
-        
+        await loadTripsData();
         utils.showToast('Trip saved successfully', 'success');
-    } else {
+    } catch (error) {
+        console.error('Error saving trip:', error);
         utils.showToast('Error saving trip', 'error');
     }
 }
@@ -1304,10 +1363,25 @@ async function deleteRowAG(tripId) {
     );
     
     if (confirmed) {
-        if (storage.TripStorage.delete(tripId)) {
+        try {
+            if (window.api && typeof window.api.delete === 'function') {
+                const response = await window.api.delete(`/trips/${tripId}`);
+                if (!response.success) {
+                    throw new Error(response.error || 'API request failed');
+                }
+            } else {
+                const apiResponse = await fetch(`${API_BASE_URL}/trips/${tripId}`, {
+                    method: 'DELETE'
+                });
+                if (!apiResponse.ok) {
+                    throw new Error(`API request failed: ${apiResponse.status}`);
+                }
+            }
             gridApi.applyTransaction({ remove: [rowNode.data] });
+            await loadTripsData();
             utils.showToast('Trip deleted successfully', 'success');
-        } else {
+        } catch (error) {
+            console.error('Error deleting trip:', error);
             utils.showToast('Error deleting trip', 'error');
         }
     }
@@ -1320,6 +1394,7 @@ function enableRowEdit(tripId) {
     const rowNode = gridApi.getRowNode(tripId);
     if (!rowNode) return;
     
+    rowNode.data._originalTrip = { ...rowNode.data };
     rowNode.data.locked = false;
     gridApi.refreshCells({ rowNodes: [rowNode], force: true });
     utils.showToast('Row unlocked for editing', 'success');
@@ -1332,11 +1407,11 @@ function cancelRowEdit(tripId) {
     const rowNode = gridApi.getRowNode(tripId);
     if (!rowNode) return;
     
-    // Reload from storage
-    const trip = storage.TripStorage.getById(tripId);
-    if (trip) {
-        Object.assign(rowNode.data, trip);
-        rowNode.data.locked = trip.status === 'closed';
+    const originalTrip = rowNode.data._originalTrip;
+    if (originalTrip) {
+        Object.assign(rowNode.data, originalTrip);
+        rowNode.data.locked = originalTrip.status === 'closed';
+        rowNode.data._originalTrip = null;
         gridApi.refreshCells({ rowNodes: [rowNode], force: true });
     }
     
@@ -1361,7 +1436,7 @@ function openMasterDataModal(title, label) {
 }
 
 // Save master data item
-function saveMasterDataItem() {
+async function saveMasterDataItem() {
     if (!currentMasterDataContext) {
         return;
     }
@@ -1375,23 +1450,23 @@ function saveMasterDataItem() {
     const newValue = input.value.trim();
     const { field, rowNode, storageType } = currentMasterDataContext;
     
-    // Save to appropriate storage
-    if (storageType === 'vehicle') {
-        storage.VehicleStorage.save({
-            vehicleNumber: newValue
-        });
-        masterData.vehicles.push(newValue);
-    } else if (storageType === 'driver') {
-        storage.DriverStorage.save({
-            name: newValue
-        });
-        masterData.drivers.push(newValue);
-    } else if (storageType === 'partner') {
-        masterData.partners.push(newValue);
-    } else if (storageType === 'purchasePlace') {
-        masterData.purchasePlaces.push(newValue);
-    } else if (storageType === 'item') {
-        masterData.items.push(newValue);
+    try {
+        if (storageType === 'vehicle') {
+            await MastersAPI.create('vehicles', { vehicle_number: newValue });
+        } else if (storageType === 'driver') {
+            await MastersAPI.create('drivers', { name: newValue });
+        } else if (storageType === 'partner') {
+            await MastersAPI.create('partners', { name: newValue });
+        } else if (storageType === 'purchasePlace') {
+            await MastersAPI.create('purchase-places', { name: newValue });
+        } else if (storageType === 'item') {
+            await MastersAPI.create('items', { name: newValue });
+        }
+        await loadMasterData();
+    } catch (error) {
+        console.error('Error saving master data item:', error);
+        utils.showToast('Failed to save item', 'error');
+        return;
     }
     
     // Update the cell with the new value
@@ -1710,9 +1785,19 @@ function openExpenseBreakdown(tripId) {
         // Populate expense form with existing data
         const form = document.getElementById('expenseBreakdownForm');
         if (form) {
+            if (!expensesReady || expenseTypes.length === 0) {
+                form.innerHTML = `
+                    <div class="expense-breakdown-empty">
+                        <p>No expenses configured in the master yet.</p>
+                    </div>
+                `;
+                updateExpenseBreakdownTotal();
+                return;
+            }
+
             const expenses = trip.expenses || {};
             form.innerHTML = expenseTypes.map(expense => {
-                const expenseKey = expense.toLowerCase();
+                const expenseKey = expenseKeyFromName(expense);
                 const value = expenses[expenseKey] || 0;
                 return `
                     <div class="expense-breakdown-item">
@@ -1761,27 +1846,23 @@ function saveExpenseBreakdown() {
     if (!form) return;
     
     const inputs = form.querySelectorAll('input[type="number"]');
-    const expenses = {
-        food: 0,
-        diesel: 0,
-        toll: 0,
-        salary: 0,
-        gst: 0,
-        other: 0
-    };
+    const expenses = {};
     let total = 0;
     
     inputs.forEach(input => {
         const expenseKey = input.id.replace('expense_', '');
         const value = parseFloat(input.value) || 0;
-        if (expenses.hasOwnProperty(expenseKey)) {
-            expenses[expenseKey] = value;
-            total += value;
-        }
+        expenses[expenseKey] = value;
+        total += value;
     });
     
     rowNode.data.expenses = expenses;
     rowNode.data.totalExpenses = total;
+    rowNode.data.expense_items = expenseTypes.map(expense => ({
+        expense_id: expenseNameToId[expense] || null,
+        expense_name: expense,
+        amount: expenses[expenseKeyFromName(expense)] || 0
+    }));
     
     // Update calculations
     updateCalculatedFields(rowNode.data);

@@ -62,6 +62,9 @@ async function apiRequest(endpoint, options = {}) {
         
         // Handle non-OK responses
         if (!response.ok) {
+            if (response.status === 401 && typeof auth !== 'undefined' && typeof auth.logout === 'function') {
+                auth.logout();
+            }
             return {
                 success: false,
                 error: data.detail || data.message || `HTTP ${response.status}`,

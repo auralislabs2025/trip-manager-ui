@@ -93,18 +93,31 @@ function confirmDialog(message, title = 'Confirm') {
             <div class="modal-content modal-small">
                 <div class="modal-header">
                     <h2>${title}</h2>
-                    <button class="modal-close" onclick="this.closest('.modal').remove(); resolve(false);">&times;</button>
+                    <button class="modal-close" aria-label="Close">&times;</button>
                 </div>
                 <div class="modal-body">
                     <p>${message}</p>
                 </div>
                 <div class="modal-footer">
-                    <button class="btn btn-secondary" onclick="this.closest('.modal').remove(); resolve(false);">Cancel</button>
-                    <button class="btn btn-primary" onclick="this.closest('.modal').remove(); resolve(true);">Confirm</button>
+                    <button class="btn btn-secondary">Cancel</button>
+                    <button class="btn btn-primary">Confirm</button>
                 </div>
             </div>
         `;
         document.body.appendChild(modal);
+
+        const closeModal = (result) => {
+            modal.remove();
+            resolve(result);
+        };
+
+        const closeBtn = modal.querySelector('.modal-close');
+        const cancelBtn = modal.querySelector('.btn.btn-secondary');
+        const confirmBtn = modal.querySelector('.btn.btn-primary');
+
+        if (closeBtn) closeBtn.addEventListener('click', () => closeModal(false));
+        if (cancelBtn) cancelBtn.addEventListener('click', () => closeModal(false));
+        if (confirmBtn) confirmBtn.addEventListener('click', () => closeModal(true));
     });
 }
 

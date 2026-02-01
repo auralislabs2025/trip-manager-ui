@@ -9,6 +9,7 @@ from app.api.v1.endpoints import (
     items,
     purchase_places,
     partners,
+    expenses,
 )
 
 api_v1_router = APIRouter()
@@ -25,3 +26,4 @@ api_v1_router.include_router(
     tags=["Purchase Places"],
 )
 api_v1_router.include_router(partners.router, prefix="/masters/partners", tags=["Partners"])
+api_v1_router.include_router(expenses.router, prefix="/masters/expenses", tags=["Expenses"])
