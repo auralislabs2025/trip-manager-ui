@@ -1,5 +1,11 @@
-from sqlalchemy.orm import Session,joinedload
+from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import func, or_
 from app.models.trip import Trip
+from app.models.vehicle import Vehicle
+from app.models.driver import Driver
+from app.models.partner import Partner
+from app.models.item import Item
+from app.models.purchase_place import PurchasePlace
 from app.schemas.trip import TripCreate, TripUpdate
 from typing import List, Optional, Dict, Any
 from pathlib import Path
@@ -54,13 +60,25 @@ class TripRepository:
         self.db = db
         self.use_db = db is not None
 
-    def get_all(self, page: int = 1, page_size: int = 10) -> Dict[str, Any]:
+    def get_all(
+        self,
+        page: int = 1,
+        page_size: int = 10,
+        search: Optional[str] = None,
+        start_date_from: Optional[str] = None,
+        start_date_to: Optional[str] = None
+    ) -> Dict[str, Any]:
         """Get all trips - from database if available, else from JSON"""
         if self.use_db:
             try:
                 query = (
                     self.db.query(Trip)
                     .filter(Trip.is_active == True)
+                    .outerjoin(Trip.vehicle)
+                    .outerjoin(Trip.driver)
+                    .outerjoin(Trip.partner)
+                    .outerjoin(Trip.item)
+                    .outerjoin(Trip.purchase_place)
                     .options(
                         joinedload(Trip.vehicle),
                         joinedload(Trip.driver),
@@ -71,6 +89,31 @@ class TripRepository:
                             .joinedload(TripExpense.expense)
                     )
                 )
+                if search:
+                    search_value = f"%{search.strip().lower()}%"
+                    query = query.filter(
+                        or_(
+                            func.lower(Vehicle.vehicle_number).like(search_value),
+                            func.lower(Driver.name).like(search_value),
+                            func.lower(Partner.name).like(search_value),
+                            func.lower(Item.name).like(search_value),
+                            func.lower(PurchasePlace.name).like(search_value),
+                        )
+                    )
+                if start_date_from:
+                    query = query.filter(Trip.trip_start_date >= start_date_from)
+                if start_date_to:
+                    query = query.filter(Trip.trip_start_date <= start_date_to)
+                totals_row = query.with_entities(
+                    func.coalesce(func.sum(Trip.revenue), 0.0),
+                    func.coalesce(func.sum(Trip.total_expenses), 0.0),
+                    func.coalesce(func.sum(Trip.profit), 0.0)
+                ).first()
+                totals = {
+                    "revenue": float(totals_row[0] or 0.0),
+                    "expenses": float(totals_row[1] or 0.0),
+                    "profit": float(totals_row[2] or 0.0),
+                }
                 total = query.count()
                 offset = (page - 1) * page_size
                 trips = query.offset(offset).limit(page_size).all()
@@ -79,20 +122,11 @@ class TripRepository:
                     "total": total,
                     "page": page,
                     "page_size": page_size,
+                    "totals": totals,
                 }
             except Exception as e:
-                logger.warning(f"Database query failed, falling back to JSON: {e}")
+                logger.warning(f"Database query failed, {e}")
                 self.use_db = False
-
-        trips = read_trips_from_json()
-        total = len(trips)
-        offset = (page - 1) * page_size
-        return {
-            "items": trips[offset:offset + page_size],
-            "total": total,
-            "page": page,
-            "page_size": page_size,
-        }
     
     def get_by_id(self, trip_id: str) -> Trip | None:
         return self.db.query(Trip).filter(Trip.id == trip_id).first()

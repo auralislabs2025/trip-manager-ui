@@ -102,7 +102,7 @@ function initVehiclesGrid() {
     const gridDiv = document.getElementById('vehiclesGridContainer');
     const gridOptions = {
         ...MastersGrid.getDefaultGridOptions(),
-        columnDefs: [
+        columnDefs: MastersGrid.buildColumnDefs([
             {
                 headerName: 'Vehicle Number',
                 field: 'vehicle_number',
@@ -130,7 +130,7 @@ function initVehiclesGrid() {
             MastersGrid.createStatusColumn(),
             MastersGrid.createDateColumn('created_at', 'Created At', 180),
             MastersGrid.createActionsColumn('Vehicle', 'Vehicle')
-        ],
+        ]),
         onGridReady: (params) => {
             gridApi = params.api;
         }

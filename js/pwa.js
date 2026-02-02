@@ -1,38 +1,16 @@
 // PWA Installation and Service Worker Registration
 
-// Register service worker
+// Disable service worker to avoid UI caching
 if ('serviceWorker' in navigator) {
-    // Only register service worker if running on http/https (not file://)
-    if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/service-worker.js')
-                .then(registration => {
-                    console.log('Service Worker registered:', registration);
-                    
-                    // Check for updates
-                    registration.addEventListener('updatefound', () => {
-                        const newWorker = registration.installing;
-                        newWorker.addEventListener('statechange', () => {
-                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                // New service worker available
-                                if (confirm('A new version is available. Reload to update?')) {
-                                    window.location.reload();
-                                }
-                            }
-                        });
-                    });
-                })
-                .catch(error => {
-                    // Only log error if not a protocol issue
-                    if (!error.message.includes('protocol')) {
-                        console.error('Service Worker registration failed:', error);
-                    }
-                });
-        });
-    } else {
-        // Silently skip service worker registration for file:// protocol
-        console.log('Service Worker skipped (file:// protocol not supported)');
-    }
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.getRegistrations()
+            .then((registrations) => {
+                registrations.forEach((registration) => registration.unregister());
+            })
+            .catch((error) => {
+                console.warn('Service Worker unregister failed:', error);
+            });
+    });
 }
 
 // Handle install prompt

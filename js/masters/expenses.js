@@ -102,7 +102,7 @@ function initExpensesGrid() {
     const gridDiv = document.getElementById('expensesGridContainer');
     const gridOptions = {
         ...MastersGrid.getDefaultGridOptions(),
-        columnDefs: [
+        columnDefs: MastersGrid.buildColumnDefs([
             {
                 headerName: 'Code',
                 field: 'expense_code',
@@ -137,7 +137,7 @@ function initExpensesGrid() {
             MastersGrid.createStatusColumn(),
             MastersGrid.createDateColumn('created_at', 'Created At', 180),
             MastersGrid.createActionsColumn('Expense', 'Expense')
-        ],
+        ]),
         onGridReady: (params) => {
             gridApi = params.api;
         }

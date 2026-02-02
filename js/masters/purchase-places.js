@@ -102,7 +102,7 @@ function initPurchasePlacesGrid() {
     const gridDiv = document.getElementById('purchasePlacesGridContainer');
     const gridOptions = {
         ...MastersGrid.getDefaultGridOptions(),
-        columnDefs: [
+        columnDefs: MastersGrid.buildColumnDefs([
             {
                 headerName: 'Name',
                 field: 'name',
@@ -122,7 +122,7 @@ function initPurchasePlacesGrid() {
             MastersGrid.createStatusColumn(),
             MastersGrid.createDateColumn('created_at', 'Created At', 180),
             MastersGrid.createActionsColumn('PurchasePlace', 'PurchasePlace')
-        ],
+        ]),
         onGridReady: (params) => {
             gridApi = params.api;
         }

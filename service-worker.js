@@ -1,6 +1,6 @@
 // Service Worker for PWA Offline Support
 
-const CACHE_NAME = 'truck-management-v1';
+const CACHE_NAME = 'truck-management-v3';
 const urlsToCache = [
     '/',
     '/index.html',
@@ -59,6 +59,10 @@ self.addEventListener('activate', (event) => {
 
 // Fetch event - serve from cache, fallback to network
 self.addEventListener('fetch', (event) => {
+    const requestUrl = new URL(event.request.url);
+    if (requestUrl.protocol !== 'http:' && requestUrl.protocol !== 'https:') {
+        return;
+    }
     event.respondWith(
         caches.match(event.request)
             .then((response) => {

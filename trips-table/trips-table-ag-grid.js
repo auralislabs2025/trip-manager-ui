@@ -25,6 +25,8 @@ let expenseIdToName = {};
 let currentExpenseBreakdownRow = null;
 let mastersReady = false;
 let expensesReady = false;
+let isLoadingTrips = false;
+let lastTripsQuery = null;
 
 // Initialize AG Grid
 function initTripsTableAGGrid() {
@@ -553,14 +555,8 @@ function createIconHeaderComponent(text, iconSvg) {
     };
 }
 
-// Get responsive header config (icon for small screens, text for large screens)
+// Get responsive header config (always use text headers)
 function getResponsiveHeaderConfig(text, iconSvg) {
-    if (isSmallScreen()) {
-        return {
-            headerComponent: createIconHeaderComponent(text, iconSvg),
-            headerName: text // Fallback for tooltip
-        };
-    }
     return {
         headerName: text
     };
@@ -1010,9 +1006,38 @@ function getApiBaseUrl() {
 }
 
 const API_BASE_URL = getApiBaseUrl();
+let includeDateFiltersOnSearch = false;
+
+function updateSummaryTotals(trips, totals) {
+    const revenueEl = document.getElementById('summaryRevenue');
+    const expensesEl = document.getElementById('summaryExpenses');
+    const profitEl = document.getElementById('summaryProfit');
+    if (!revenueEl || !expensesEl || !profitEl) return;
+
+    const resolvedTotals = totals || (trips || []).reduce(
+        (acc, trip) => {
+            acc.revenue += Number(trip.revenue || 0);
+            acc.expenses += Number(trip.totalExpenses || 0);
+            acc.profit += Number(trip.profit || 0);
+            return acc;
+        },
+        { revenue: 0, expenses: 0, profit: 0 }
+    );
+
+    const format = (value) => {
+        if (typeof utils?.formatCurrency === 'function') {
+            return utils.formatCurrency(value);
+        }
+        return `₹${value.toFixed(2)}`;
+    };
+
+    revenueEl.textContent = format(resolvedTotals.revenue || 0);
+    expensesEl.textContent = format(resolvedTotals.expenses || 0);
+    profitEl.textContent = format(resolvedTotals.profit || 0);
+}
 
 // Load trips data from API
-async function loadTripsData() {
+async function loadTripsData(force = false) {
     // Safety check - ensure gridApi is ready
     if (!gridApi) {
         console.error('Grid API not available');
@@ -1034,29 +1059,57 @@ async function loadTripsData() {
         return;
     }
     
+    if (isLoadingTrips) return;
+    isLoadingTrips = true;
     try {
         // Try to fetch from API first - use api helper if available, otherwise direct fetch
         let trips;
-        let page = 1;
-        let pageSize = 20;
-        if (gridApi && typeof gridApi.paginationGetCurrentPage === 'function') {
-            page = (gridApi.paginationGetCurrentPage() || 0) + 1;
-        }
-        if (gridApi && typeof gridApi.paginationGetPageSize === 'function') {
-            pageSize = gridApi.paginationGetPageSize() || 20;
-        }
+        const page = 1;
+        const pageSize = 1000;
         
+        const searchTerm = document.getElementById('tableSearch')?.value?.trim() || '';
+        const startDateFrom = document.getElementById('startDateFrom')?.value || '';
+        const startDateTo = document.getElementById('startDateTo')?.value || '';
+        const queryParams = new URLSearchParams({
+            page: String(page),
+            page_size: String(pageSize)
+        });
+        if (searchTerm) {
+            queryParams.append('search', searchTerm);
+        }
+        if (includeDateFiltersOnSearch) {
+            if (startDateFrom) {
+                queryParams.append('start_date_from', startDateFrom);
+            }
+            if (startDateTo) {
+                queryParams.append('start_date_to', startDateTo);
+            }
+        }
+
+        const queryString = queryParams.toString();
+        if (!queryString) {
+            return;
+        }
+        if (!force && lastTripsQuery === queryString) {
+            return;
+        }
+        lastTripsQuery = queryString;
+
+        let responseTotals = null;
+        let responseTotal = null;
         if (window.api && typeof window.api.get === 'function') {
             // Use authenticated API helper
-            const response = await window.api.get(`/trips/?page=${page}&page_size=${pageSize}`);
+            const response = await window.api.get(`/trips/?${queryString}`);
             if (response.success) {
                 trips = response.data?.items || [];
+                responseTotals = response.data?.totals || null;
+                responseTotal = response.data?.total ?? null;
             } else {
                 throw new Error(response.error || `API request failed: ${response.status}`);
             }
         } else {
             // Fallback to direct fetch
-            const response = await fetch(`${API_BASE_URL}/trips/?page=${page}&page_size=${pageSize}`);
+            const response = await fetch(`${API_BASE_URL}/trips/?${queryString}`);
             
             if (!response.ok) {
                 throw new Error(`API request failed: ${response.status}`);
@@ -1064,8 +1117,14 @@ async function loadTripsData() {
             
             const data = await response.json();
             trips = data?.items || [];
+            responseTotals = data?.totals || null;
+            responseTotal = data?.total ?? null;
         }
         
+        if (responseTotal !== null && typeof gridApi.paginationSetRowCount === 'function') {
+            gridApi.paginationSetRowCount(responseTotal, false);
+        }
+
         // If API returns empty array or no data, fallback to LocalStorage
         if (!trips || trips.length === 0) {
             if (typeof gridApi.setRowData === 'function') {
@@ -1098,6 +1157,8 @@ async function loadTripsData() {
             return mergedTrip;
         });
         
+        updateSummaryTotals(tripsWithLocked, responseTotals);
+
         // Use setRowData if available, otherwise use setGridOption
         if (typeof gridApi.setRowData === 'function') {
             gridApi.setRowData(tripsWithLocked);
@@ -1117,6 +1178,8 @@ async function loadTripsData() {
         } else if (typeof gridApi.setGridOption === 'function') {
             gridApi.setGridOption('rowData', []);
         }
+    } finally {
+        isLoadingTrips = false;
     }
 }
 
@@ -1334,7 +1397,7 @@ async function saveRowAG(tripId) {
         
         const updatedTrip = normalizeTripFromApi(response);
         if (trip.id.startsWith('trip_new_')) {
-            await loadTripsData();
+            await loadTripsData(true);
         } else {
             Object.assign(rowNode.data, updatedTrip);
             rowNode.data.locked = updatedTrip.status === 'closed';
@@ -1381,7 +1444,7 @@ async function deleteRowAG(tripId) {
                 }
             }
             gridApi.applyTransaction({ remove: [rowNode.data] });
-            await loadTripsData();
+            await loadTripsData(true);
             utils.showToast('Trip deleted successfully', 'success');
         } catch (error) {
             console.error('Error deleting trip:', error);
@@ -1504,22 +1567,34 @@ function setupEventListeners() {
     
     // Search
     const tableSearch = document.getElementById('tableSearch');
+    const applyQuickFilter = (value) => {
+        if (!gridApi) return;
+        if (typeof gridApi.setQuickFilter === 'function') {
+            gridApi.setQuickFilter(value);
+            return;
+        }
+        if (typeof gridApi.setGridOption === 'function') {
+            gridApi.setGridOption('quickFilterText', value);
+        }
+    };
     if (tableSearch) {
         tableSearch.addEventListener('input', utils.debounce(() => {
-            const searchTerm = tableSearch.value;
-            gridApi.setQuickFilter(searchTerm);
+            includeDateFiltersOnSearch = false;
+            if (typeof gridApi.paginationGoToFirstPage === 'function') {
+                gridApi.paginationGoToFirstPage();
+            }
+            loadTripsData();
         }, 300));
     }
-    
-    // Export
-    const exportBtn = document.getElementById('exportBtn');
-    if (exportBtn) {
-        exportBtn.addEventListener('click', () => {
-            if (!gridApi) return;
-            gridApi.exportDataAsCsv({
-                fileName: `trips_${new Date().toISOString().split('T')[0]}.csv`
-            });
-            utils.showToast('Trips exported successfully', 'success');
+
+    const searchBtn = document.getElementById('searchBtn');
+    if (searchBtn) {
+        searchBtn.addEventListener('click', () => {
+            includeDateFiltersOnSearch = true;
+            if (typeof gridApi.paginationGoToFirstPage === 'function') {
+                gridApi.paginationGoToFirstPage();
+            }
+            loadTripsData(true);
         });
     }
     
@@ -1554,49 +1629,26 @@ function setupEventListeners() {
     // Date filter controls
     const startDateFrom = document.getElementById('startDateFrom');
     const startDateTo = document.getElementById('startDateTo');
-    const endDateFrom = document.getElementById('endDateFrom');
-    const endDateTo = document.getElementById('endDateTo');
     const clearDateFiltersBtn = document.getElementById('clearDateFiltersBtn');
     
     const applyDateFilters = () => {
         if (!gridApi) return;
-        
-        const filters = [];
-        if (startDateFrom?.value) {
-            gridApi.setFilterModel({
-                tripStartDate: {
-                    type: 'greaterThanOrEqual',
-                    dateFrom: startDateFrom.value
-                }
-            });
-        }
-        if (startDateTo?.value) {
-            const currentFilter = gridApi.getFilterModel()?.tripStartDate || {};
-            gridApi.setFilterModel({
-                tripStartDate: {
-                    ...currentFilter,
-                    type: 'lessThanOrEqual',
-                    dateTo: startDateTo.value
-                }
-            });
-        }
-        // Note: AG Grid date filter works per column, so we apply to each date column separately
+        includeDateFiltersOnSearch = true;
     };
     
     if (startDateFrom) startDateFrom.addEventListener('change', applyDateFilters);
     if (startDateTo) startDateTo.addEventListener('change', applyDateFilters);
-    if (endDateFrom) endDateFrom.addEventListener('change', applyDateFilters);
-    if (endDateTo) endDateTo.addEventListener('change', applyDateFilters);
     
     if (clearDateFiltersBtn) {
         clearDateFiltersBtn.addEventListener('click', () => {
+            includeDateFiltersOnSearch = false;
+            if (tableSearch) tableSearch.value = '';
             if (startDateFrom) startDateFrom.value = '';
             if (startDateTo) startDateTo.value = '';
-            if (endDateFrom) endDateFrom.value = '';
-            if (endDateTo) endDateTo.value = '';
-            if (gridApi) {
-                gridApi.setFilterModel(null);
+            if (typeof gridApi.paginationGoToFirstPage === 'function') {
+                gridApi.paginationGoToFirstPage();
             }
+            loadTripsData(true);
             utils.showToast('Date filters cleared', 'info');
         });
     }

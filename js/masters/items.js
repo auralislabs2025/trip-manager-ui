@@ -102,7 +102,7 @@ function initItemsGrid() {
     const gridDiv = document.getElementById('itemsGridContainer');
     const gridOptions = {
         ...MastersGrid.getDefaultGridOptions(),
-        columnDefs: [
+        columnDefs: MastersGrid.buildColumnDefs([
             {
                 headerName: 'Name',
                 field: 'name',
@@ -124,7 +124,7 @@ function initItemsGrid() {
             MastersGrid.createStatusColumn(),
             MastersGrid.createDateColumn('created_at', 'Created At', 180),
             MastersGrid.createActionsColumn('Item', 'Item')
-        ],
+        ]),
         onGridReady: (params) => {
             gridApi = params.api;
         }

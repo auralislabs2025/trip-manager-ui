@@ -107,7 +107,7 @@ function initPartnersGrid() {
     const gridDiv = document.getElementById('partnersGridContainer');
     const gridOptions = {
         ...MastersGrid.getDefaultGridOptions(),
-        columnDefs: [
+        columnDefs: MastersGrid.buildColumnDefs([
             {
                 headerName: 'Name',
                 field: 'name',
@@ -151,7 +151,7 @@ function initPartnersGrid() {
             MastersGrid.createStatusColumn(),
             MastersGrid.createDateColumn('created_at', 'Created At', 180),
             MastersGrid.createActionsColumn('Partner', 'Partner')
-        ],
+        ]),
         onGridReady: (params) => {
             gridApi = params.api;
         }

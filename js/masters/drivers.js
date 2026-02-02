@@ -98,15 +98,11 @@ function initDriversGrid() {
     }
     
     const gridDiv = document.getElementById('driversGridContainer');
-    const isDesktop = window.innerWidth >= 1024;
-    const createdAtColumn = MastersGrid.createDateColumn('created_at', 'Created At', 180, {
-        flex: isDesktop ? 1 : undefined
-    });
+    const createdAtColumn = MastersGrid.createDateColumn('created_at', 'Created At', 180);
 
     const gridOptions = {
         ...MastersGrid.getDefaultGridOptions(),
-        suppressSizeToFit: !isDesktop,
-        columnDefs: [
+        columnDefs: MastersGrid.buildColumnDefs([
             {
                 headerName: 'Name',
                 field: 'name',
@@ -134,17 +130,9 @@ function initDriversGrid() {
             MastersGrid.createStatusColumn(),
             createdAtColumn,
             MastersGrid.createActionsColumn('Driver', 'Driver')
-        ],
+        ]),
         onGridReady: (params) => {
             gridApi = params.api;
-            if (isDesktop) {
-                params.api.sizeColumnsToFit();
-            }
-        },
-        onGridSizeChanged: (params) => {
-            if (isDesktop) {
-                params.api.sizeColumnsToFit();
-            }
         }
     };
     

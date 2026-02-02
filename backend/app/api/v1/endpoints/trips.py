@@ -18,10 +18,19 @@ router = APIRouter()
 def list_trips(
     page: int = 1,
     page_size: int = 10,
+    search: Optional[str] = None,
+    start_date_from: Optional[str] = None,
+    start_date_to: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
     trip_repo = TripRepository(db)
-    return trip_repo.get_all(page=page, page_size=page_size)
+    return trip_repo.get_all(
+        page=page,
+        page_size=page_size,
+        search=search,
+        start_date_from=start_date_from,
+        start_date_to=start_date_to
+    )
 
 
 @router.get("/masters", response_model=Dict[str, List[Dict[str, Any]]])

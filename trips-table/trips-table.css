@@ -105,6 +105,7 @@
     font-size: var(--font-size-sm);
 }
 
+
 /* Excel-like Trips Table Styles */
 
 .trips-table-content {
@@ -113,55 +114,54 @@
     overflow: hidden;
 }
 
-/* Status Legend */
-.status-legend {
-    display: flex;
-    gap: var(--spacing-lg);
-    align-items: center;
-    padding: var(--spacing-base) var(--spacing-lg);
+/* Summary Totals Strip */
+.summary-strip {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(160px, 1fr));
+    gap: var(--spacing-base);
+    padding: var(--spacing-base);
     margin-bottom: var(--spacing-base);
     background-color: var(--color-surface);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-sm);
-    flex-wrap: wrap;
 }
 
-.legend-item {
+.summary-card {
     display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
+    flex-direction: column;
+    gap: 4px;
+    padding: var(--spacing-sm) var(--spacing-base);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: #fff;
 }
 
-.legend-color {
-    width: 16px;
-    height: 16px;
-    border-radius: var(--radius-sm);
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    display: inline-block;
+.summary-label {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
 }
 
-.legend-draft {
-    background-color: #fff3cd;
-    border-color: #ffc107;
-}
-
-.legend-closed {
-    background-color: #d1e7dd;
-    border-color: #198754;
-}
-
-.legend-text {
-    font-size: var(--font-size-sm);
+.summary-value {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
     color: var(--color-text-primary);
-    font-weight: var(--font-weight-medium);
 }
+
+@media (max-width: 768px) {
+    .summary-strip {
+        grid-template-columns: 1fr;
+    }
+}
+
 
 /* Table Toolbar */
 .table-toolbar {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: var(--spacing-base);
+    justify-content: flex-start;
+    align-items: flex-end;
+    gap: var(--spacing-lg);
     margin-bottom: var(--spacing-lg);
     padding: var(--spacing-base);
     background-color: var(--color-surface);
@@ -171,13 +171,60 @@
 }
 
 .toolbar-search {
-    flex: 1;
+    flex: 1 1 480px;
     min-width: 200px;
 }
 
 .toolbar-actions {
     display: flex;
     gap: var(--spacing-sm);
+}
+
+.toolbar-date-filters {
+    display: flex;
+    gap: var(--spacing-base);
+    align-items: flex-end;
+    flex-wrap: wrap;
+    flex: 0 0 auto;
+}
+
+.toolbar-date-filters .form-group {
+    margin: 0;
+}
+
+@media (max-width: 1024px) {
+    .table-toolbar {
+        flex-direction: row;
+        align-items: flex-end;
+        flex-wrap: wrap;
+    }
+
+    .toolbar-search,
+    .toolbar-date-filters,
+    .toolbar-actions {
+        width: auto;
+    }
+
+    .toolbar-date-filters {
+        justify-content: flex-start;
+    }
+
+    .toolbar-search {
+        flex: 1 1 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    .table-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .toolbar-search,
+    .toolbar-date-filters,
+    .toolbar-actions {
+        width: 100%;
+    }
 }
 
 /* Excel Table Container */

@@ -189,6 +189,29 @@ const MastersGrid = {
             }
         };
     },
+
+    isDesktop() {
+        return window.innerWidth >= 1024;
+    },
+
+    // Ensure one center column flexes on desktop to prevent whitespace
+    buildColumnDefs(columnDefs) {
+        const defs = columnDefs.map((def) => ({ ...def }));
+        if (!MastersGrid.isDesktop()) {
+            return defs;
+        }
+        const hasFlex = defs.some((def) => def.flex);
+        if (hasFlex) {
+            return defs;
+        }
+        for (let i = defs.length - 1; i >= 0; i -= 1) {
+            if (!defs[i].pinned) {
+                defs[i].flex = 1;
+                break;
+            }
+        }
+        return defs;
+    },
     
     // Common grid options
     getDefaultGridOptions() {
