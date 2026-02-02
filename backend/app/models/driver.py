@@ -18,7 +18,7 @@ class Driver(Base, AuditMixin):
     # Driver Identity
     name = Column(String, unique=True, nullable=False)
     phone = Column(String, nullable=True)
-    license_number = Column(String, nullable=False, unique=True)
+    license_number = Column(String, nullable=True, unique=True)
 
     # Status
     is_active = Column(Boolean, nullable=False, default=True, index=True)

@@ -9,7 +9,7 @@ from typing import Optional
 class DriverBase(BaseModel):
     name: str
     phone: Optional[str] = None
-    license_number: str
+    license_number: Optional[str] = None
     is_active: bool = True
 
 
@@ -37,7 +37,7 @@ class DriverResponse(BaseModel):
     id: str
     name: str
     phone: Optional[str]
-    license_number: str
+    license_number: Optional[str]
     is_active: bool
     created_at: datetime
     updated_at: datetime
