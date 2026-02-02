@@ -474,7 +474,10 @@ function createMasterDataCellRenderer(fieldName, modalTitle, labelText, storageT
 function openMasterDataModalForField(fieldName, modalTitle, labelText, storageType, tripId) {
     if (!gridApi) return;
     
-    const rowNode = gridApi.getRowNode(tripId);
+    let rowNode = gridApi.getRowNode(tripId);
+    if (!rowNode) {
+        rowNode = findPinnedRowById(tripId);
+    }
     if (!rowNode) return;
     
     // Store context
@@ -598,7 +601,6 @@ function getColumnDefs() {
             },
             valueFormatter: (params) => {
                 if (!params.value) return '';
-                if (params.value.includes('-')) return params.value;
                 return utils.formatDate(params.value);
             },
             valueGetter: (params) => {

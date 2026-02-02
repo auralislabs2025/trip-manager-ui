@@ -9,17 +9,30 @@ function initDashboard() {
     if (!auth.protectRoute()) return;
     
     updateMetrics();
-    loadRecentTrips();
     initCharts();
     setupNavigation();
 }
 
 // Update metrics cards
-function updateMetrics() {
-    const monthlyProfit = calculations.getCurrentMonthProfit();
-    const yearlyProfit = calculations.getCurrentYearProfit();
-    const activeTrips = calculations.getActiveTripsCount();
-    const monthlyExpenses = calculations.getCurrentMonthExpenses();
+async function updateMetrics() {
+    let monthlyProfit = null;
+    let yearlyProfit = null;
+    let monthlyExpenses = null;
+
+    if (window.api && typeof window.api.get === 'function') {
+        const response = await window.api.get('/dashboard/metrics');
+        if (response.success) {
+            monthlyProfit = response.data?.monthly_profit ?? 0;
+            yearlyProfit = response.data?.yearly_profit ?? 0;
+            monthlyExpenses = response.data?.monthly_expenses ?? 0;
+        }
+    }
+
+    if (monthlyProfit === null || yearlyProfit === null || monthlyExpenses === null) {
+        monthlyProfit = calculations.getCurrentMonthProfit();
+        yearlyProfit = calculations.getCurrentYearProfit();
+        monthlyExpenses = calculations.getCurrentMonthExpenses();
+    }
     
     // Update monthly profit
     const monthlyProfitEl = document.getElementById('monthlyProfit');
@@ -33,38 +46,16 @@ function updateMetrics() {
         yearlyProfitEl.textContent = utils.formatCurrency(yearlyProfit);
     }
     
-    // Update active trips
-    const activeTripsEl = document.getElementById('activeTrips');
-    if (activeTripsEl) {
-        activeTripsEl.textContent = activeTrips;
-    }
-    
     // Update monthly expenses
     const monthlyExpensesEl = document.getElementById('monthlyExpenses');
     if (monthlyExpensesEl) {
         monthlyExpensesEl.textContent = utils.formatCurrency(monthlyExpenses);
     }
     
-    // Calculate previous month profit for comparison
-    const today = new Date();
-    const prevMonth = today.getMonth() - 1;
-    const prevYear = prevMonth < 0 ? today.getFullYear() - 1 : today.getFullYear();
-    const prevMonthProfit = calculations.getMonthlyProfit(prevMonth < 0 ? 11 : prevMonth, prevYear);
-    const change = monthlyProfit - prevMonthProfit;
-    const changePercent = prevMonthProfit !== 0 ? ((change / prevMonthProfit) * 100).toFixed(1) : 0;
-    
     const monthlyProfitChangeEl = document.getElementById('monthlyProfitChange');
     if (monthlyProfitChangeEl) {
-        if (change > 0) {
-            monthlyProfitChangeEl.textContent = `↑ ${utils.formatCurrency(Math.abs(change))} (${Math.abs(changePercent)}%)`;
-            monthlyProfitChangeEl.style.color = 'var(--color-success)';
-        } else if (change < 0) {
-            monthlyProfitChangeEl.textContent = `↓ ${utils.formatCurrency(Math.abs(change))} (${Math.abs(changePercent)}%)`;
-            monthlyProfitChangeEl.style.color = 'var(--color-error)';
-        } else {
-            monthlyProfitChangeEl.textContent = 'No change';
-            monthlyProfitChangeEl.style.color = 'var(--color-text-secondary)';
-        }
+        monthlyProfitChangeEl.textContent = '';
+        monthlyProfitChangeEl.style.color = 'var(--color-text-secondary)';
     }
 }
 
@@ -108,16 +99,23 @@ function loadRecentTrips() {
 // Initialize charts
 function initCharts() {
     initMonthlyProfitChart();
-    initExpenseChart();
-    initTripStatusChart();
 }
 
 // Monthly profit line chart
-function initMonthlyProfitChart() {
+async function initMonthlyProfitChart() {
     const ctx = document.getElementById('monthlyProfitChart');
     if (!ctx) return;
     
-    const data = calculations.getLastMonthsProfit(12);
+    let data = null;
+    if (window.api && typeof window.api.get === 'function') {
+        const response = await window.api.get('/dashboard/monthly-profit-trend?months=12');
+        if (response.success) {
+            data = response.data?.items || [];
+        }
+    }
+    if (!data) {
+        data = calculations.getLastMonthsProfit(12);
+    }
     
     if (monthlyProfitChart) {
         monthlyProfitChart.destroy();
@@ -220,47 +218,6 @@ function initExpenseChart() {
     });
 }
 
-// Trip status distribution chart
-function initTripStatusChart() {
-    const ctx = document.getElementById('tripStatusChart');
-    if (!ctx) return;
-    
-    const distribution = calculations.getTripStatusDistribution();
-    
-    if (tripStatusChart) {
-        tripStatusChart.destroy();
-    }
-    
-    tripStatusChart = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: ['Draft', 'In Progress', 'Returned', 'Closed'],
-            datasets: [{
-                data: [
-                    distribution.draft,
-                    distribution.in_progress,
-                    distribution.returned,
-                    distribution.closed
-                ],
-                backgroundColor: [
-                    '#757575',
-                    '#2196F3',
-                    '#FF9800',
-                    '#4CAF50'
-                ]
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom'
-                }
-            }
-        }
-    });
-}
 
 // Setup navigation
 function setupNavigation() {
