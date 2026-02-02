@@ -58,14 +58,13 @@ function initTripsTableAGGrid() {
             filter: false,
             resizable: isSmallScreen(), // Allow resizing on small screens
             editable: false, // Default to false, enable per column
-            wrapText: true, // Enable text wrapping in cells
-            autoHeight: true, // Auto adjust row height based on content
+            wrapText: false, // Keep fixed row height for infinite row model
+            autoHeight: false, // Avoid overlap with infinite row model
             cellStyle: { 
-                whiteSpace: 'normal', // Allow text wrapping
-                wordWrap: 'break-word', // Wrap long words
-                overflowWrap: 'break-word', // Wrap overflowing text
-                overflow: 'hidden', // Prevent content overflow
-                maxWidth: '100%' // Keep content within column boundaries
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                maxWidth: '100%'
             }
         },
         
@@ -78,12 +77,15 @@ function initTripsTableAGGrid() {
         enterNavigatesVertically: true,
         enterNavigatesVerticallyAfterEdit: true,
         
-        // Pagination
+        // Pagination (server-side)
+        rowModelType: 'infinite',
         pagination: true,
-        paginationPageSize: 10,
-        paginationPageSizeSelector: [10],
+        paginationPageSize: 20,
+        paginationPageSizeSelector: [20],
+        cacheBlockSize: 20,
         
         // Row styling
+        rowHeight: 44,
         getRowStyle: (params) => {
             const status = params.data?.status || 'draft';
             if (status === 'draft') {
@@ -113,22 +115,7 @@ function initTripsTableAGGrid() {
             gridApi = params.api;
             gridColumnApi = params.columnApi || params.api;
             
-            // Check if setRowData exists (might be in prototype or not in first 20 methods)
-            const hasSetRowData = gridApi && (typeof gridApi.setRowData === 'function' || typeof gridApi.setGridOption === 'function');
-            
-            if (hasSetRowData) {
-                loadTripsData();
-            } else {
-                console.error('Grid API not properly initialized');
-                console.log('Grid API:', gridApi);
-                console.log('Checking for setRowData:', 'setRowData' in gridApi, typeof gridApi.setRowData);
-                console.log('Checking for setGridOption:', 'setGridOption' in gridApi, typeof gridApi.setGridOption);
-                // Retry after a short delay - sometimes API takes a moment to fully initialize
-                setTimeout(() => {
-                    gridApi = params.api; // Re-assign to be sure
-                    loadTripsData();
-                }, 100);
-            }
+            setTripsDatasource();
         },
         
         onCellValueChanged: (params) => {
@@ -152,7 +139,8 @@ function initTripsTableAGGrid() {
             if (canEdit && params.event) {
                 params.api.startEditingCell({
                     rowIndex: params.node.rowIndex,
-                    colKey: params.column.getColId()
+                    colKey: params.column.getColId(),
+                    rowPinned: params.node.rowPinned || undefined
                 });
             }
         },
@@ -861,6 +849,9 @@ function getColumnDefs() {
             editable: false,
             cellRenderer: (params) => {
                 const trip = params.data;
+                if (!trip) {
+                    return '';
+                }
                 const expenses = trip.expenses || {};
                 const totalExpenses = trip.totalExpenses || 0;
                 
@@ -943,6 +934,9 @@ function getColumnDefs() {
             cellStyle: { textAlign: 'center' },
             cellRenderer: (params) => {
                 const trip = params.data;
+                if (!trip) {
+                    return '';
+                }
                 const isLocked = trip.status === 'closed' && trip.locked !== false;
                 
                 const isSmall = window.innerWidth < 1024;
@@ -1037,149 +1031,101 @@ function updateSummaryTotals(trips, totals) {
 }
 
 // Load trips data from API
-async function loadTripsData(force = false) {
-    // Safety check - ensure gridApi is ready
-    if (!gridApi) {
-        console.error('Grid API not available');
+async function fetchTripsPage(page, pageSize) {
+    const searchTerm = document.getElementById('tableSearch')?.value?.trim() || '';
+    const startDateFrom = document.getElementById('startDateFrom')?.value || '';
+    const startDateTo = document.getElementById('startDateTo')?.value || '';
+    const queryParams = new URLSearchParams({
+        page: String(page),
+        page_size: String(pageSize)
+    });
+    if (searchTerm) {
+        queryParams.append('search', searchTerm);
+    }
+    if (includeDateFiltersOnSearch) {
+        if (startDateFrom) {
+            queryParams.append('start_date_from', startDateFrom);
+        }
+        if (startDateTo) {
+            queryParams.append('start_date_to', startDateTo);
+        }
+    }
+
+    const queryString = queryParams.toString();
+    const responseTotals = { totals: null, total: null, items: [] };
+
+    if (window.api && typeof window.api.get === 'function') {
+        const response = await window.api.get(`/trips/?${queryString}`);
+        if (!response.success) {
+            throw new Error(response.error || `API request failed: ${response.status}`);
+        }
+        responseTotals.items = response.data?.items || [];
+        responseTotals.totals = response.data?.totals || null;
+        responseTotals.total = response.data?.total ?? null;
+        return responseTotals;
+    }
+
+    const response = await fetch(`${API_BASE_URL}/trips/?${queryString}`);
+    if (!response.ok) {
+        throw new Error(`API request failed: ${response.status}`);
+    }
+    const data = await response.json();
+    responseTotals.items = data?.items || [];
+    responseTotals.totals = data?.totals || null;
+    responseTotals.total = data?.total ?? null;
+    return responseTotals;
+}
+
+function setTripsDatasource() {
+    if (!gridApi) return;
+    const datasource = {
+        getRows: async (params) => {
+            if (isLoadingTrips) return;
+            isLoadingTrips = true;
+            try {
+                const pageSize = params.endRow - params.startRow;
+                const page = Math.floor(params.startRow / pageSize) + 1;
+                const response = await fetchTripsPage(page, pageSize);
+                const trips = (response.items || []).map(normalizeTripFromApi).map((trip) => {
+                    const mergedTrip = {
+                        ...trip,
+                        locked: trip.status === 'closed'
+                    };
+                    if (mastersReady) {
+                        applyMasterMappingsToTrip(mergedTrip);
+                    }
+                    return mergedTrip;
+                });
+
+                updateSummaryTotals(trips, response.totals);
+                const totalRows = typeof response.total === 'number' ? response.total : trips.length;
+                params.successCallback(trips, totalRows);
+            } catch (error) {
+                console.error('Error fetching trips from API:', error);
+                utils.showToast('Failed to load trips from API', 'error');
+                params.failCallback();
+            } finally {
+                isLoadingTrips = false;
+            }
+        }
+    };
+
+    if (typeof gridApi.setDatasource === 'function') {
+        gridApi.setDatasource(datasource);
+    } else if (typeof gridApi.setGridOption === 'function') {
+        gridApi.setGridOption('datasource', datasource);
+    }
+}
+
+function refreshTripsData() {
+    if (!gridApi) return;
+    lastTripsQuery = null;
+    if (typeof gridApi.purgeInfiniteCache === 'function') {
+        gridApi.purgeInfiniteCache();
         return;
     }
-    
-    // Check if setRowData exists (try both direct check and in operator)
-    const canSetRowData = 'setRowData' in gridApi || typeof gridApi.setRowData === 'function';
-    const canSetGridOption = 'setGridOption' in gridApi || typeof gridApi.setGridOption === 'function';
-    
-    if (!canSetRowData && !canSetGridOption) {
-        console.error('Neither setRowData nor setGridOption available');
-        console.log('Grid API methods check:', {
-            hasSetRowDataIn: 'setRowData' in gridApi,
-            hasSetGridOptionIn: 'setGridOption' in gridApi,
-            hasSetRowData: typeof gridApi.setRowData,
-            hasSetGridOption: typeof gridApi.setGridOption
-        });
-        return;
-    }
-    
-    if (isLoadingTrips) return;
-    isLoadingTrips = true;
-    try {
-        // Try to fetch from API first - use api helper if available, otherwise direct fetch
-        let trips;
-        const page = 1;
-        const pageSize = 1000;
-        
-        const searchTerm = document.getElementById('tableSearch')?.value?.trim() || '';
-        const startDateFrom = document.getElementById('startDateFrom')?.value || '';
-        const startDateTo = document.getElementById('startDateTo')?.value || '';
-        const queryParams = new URLSearchParams({
-            page: String(page),
-            page_size: String(pageSize)
-        });
-        if (searchTerm) {
-            queryParams.append('search', searchTerm);
-        }
-        if (includeDateFiltersOnSearch) {
-            if (startDateFrom) {
-                queryParams.append('start_date_from', startDateFrom);
-            }
-            if (startDateTo) {
-                queryParams.append('start_date_to', startDateTo);
-            }
-        }
-
-        const queryString = queryParams.toString();
-        if (!queryString) {
-            return;
-        }
-        if (!force && lastTripsQuery === queryString) {
-            return;
-        }
-        lastTripsQuery = queryString;
-
-        let responseTotals = null;
-        let responseTotal = null;
-        if (window.api && typeof window.api.get === 'function') {
-            // Use authenticated API helper
-            const response = await window.api.get(`/trips/?${queryString}`);
-            if (response.success) {
-                trips = response.data?.items || [];
-                responseTotals = response.data?.totals || null;
-                responseTotal = response.data?.total ?? null;
-            } else {
-                throw new Error(response.error || `API request failed: ${response.status}`);
-            }
-        } else {
-            // Fallback to direct fetch
-            const response = await fetch(`${API_BASE_URL}/trips/?${queryString}`);
-            
-            if (!response.ok) {
-                throw new Error(`API request failed: ${response.status}`);
-            }
-            
-            const data = await response.json();
-            trips = data?.items || [];
-            responseTotals = data?.totals || null;
-            responseTotal = data?.total ?? null;
-        }
-        
-        if (responseTotal !== null && typeof gridApi.paginationSetRowCount === 'function') {
-            gridApi.paginationSetRowCount(responseTotal, false);
-        }
-
-        // If API returns empty array or no data, fallback to LocalStorage
-        if (!trips || trips.length === 0) {
-            if (typeof gridApi.setRowData === 'function') {
-                gridApi.setRowData([]);
-            } else if (typeof gridApi.setGridOption === 'function') {
-                gridApi.setGridOption('rowData', []);
-            }
-            console.log('No trips returned from API');
-            return;
-        }
-
-        trips = trips.map(normalizeTripFromApi);
-        
-        // Sort by date (newest first)
-        trips.sort((a, b) => {
-            const dateA = new Date(a.tripStartDate || a.created_at || 0);
-            const dateB = new Date(b.tripStartDate || b.created_at || 0);
-            return dateB - dateA;
-        });
-        
-        // Set locked status for closed trips
-        const tripsWithLocked = trips.map(trip => {
-            const mergedTrip = {
-                ...trip,
-                locked: trip.status === 'closed'
-            };
-            if (mastersReady) {
-                applyMasterMappingsToTrip(mergedTrip);
-            }
-            return mergedTrip;
-        });
-        
-        updateSummaryTotals(tripsWithLocked, responseTotals);
-
-        // Use setRowData if available, otherwise use setGridOption
-        if (typeof gridApi.setRowData === 'function') {
-            gridApi.setRowData(tripsWithLocked);
-        } else if (typeof gridApi.setGridOption === 'function') {
-            gridApi.setGridOption('rowData', tripsWithLocked);
-        } else {
-            console.error('Cannot set row data - no suitable method found');
-            return;
-        }
-        console.log(`Loaded ${trips.length} trips from API`);
-        
-    } catch (error) {
-        console.error('Error fetching trips from API:', error);
-        utils.showToast('Failed to load trips from API', 'error');
-        if (typeof gridApi.setRowData === 'function') {
-            gridApi.setRowData([]);
-        } else if (typeof gridApi.setGridOption === 'function') {
-            gridApi.setGridOption('rowData', []);
-        }
-    } finally {
-        isLoadingTrips = false;
+    if (typeof gridApi.refreshInfiniteCache === 'function') {
+        gridApi.refreshInfiniteCache();
     }
 }
 
@@ -1268,6 +1214,40 @@ function updateCalculatedFields(trip) {
     trip.profit = calculations.calculateProfit(trip.revenue, totalExpenses);
 }
 
+function getPinnedTopRowData() {
+    if (!gridApi || typeof gridApi.getPinnedTopRowCount !== 'function') return [];
+    const count = gridApi.getPinnedTopRowCount();
+    const rows = [];
+    for (let i = 0; i < count; i += 1) {
+        const rowNode = gridApi.getPinnedTopRow(i);
+        if (rowNode?.data) rows.push(rowNode.data);
+    }
+    return rows;
+}
+
+function setPinnedTopRowData(rows) {
+    if (!gridApi) return;
+    if (typeof gridApi.setPinnedTopRowData === 'function') {
+        gridApi.setPinnedTopRowData(rows);
+        return;
+    }
+    if (typeof gridApi.setGridOption === 'function') {
+        gridApi.setGridOption('pinnedTopRowData', rows);
+    }
+}
+
+function findPinnedRowById(tripId) {
+    if (!gridApi || typeof gridApi.getPinnedTopRowCount !== 'function') return null;
+    const count = gridApi.getPinnedTopRowCount();
+    for (let i = 0; i < count; i += 1) {
+        const rowNode = gridApi.getPinnedTopRow(i);
+        if (rowNode?.data?.id === tripId) {
+            return rowNode;
+        }
+    }
+    return null;
+}
+
 // Add new row
 function addNewRow() {
     if (!gridApi) {
@@ -1283,49 +1263,26 @@ function addNewRow() {
         locked: false
     };
     
-    // Use applyTransaction to add row at index 0 (top of current view)
-    // This is the proper AG Grid way to add rows at a specific position
-    const transaction = {
-        add: [newTrip],
-        addIndex: 0
-    };
+    const pinned = getPinnedTopRowData();
+    pinned.unshift(newTrip);
+    setPinnedTopRowData(pinned);
     
-    if (typeof gridApi.applyTransaction === 'function') {
-        gridApi.applyTransaction(transaction);
-        
-        // Go to first page to ensure new row is visible
-        if (typeof gridApi.paginationGoToPage === 'function') {
-            gridApi.paginationGoToPage(0);
-        }
-        
-        // Scroll to top and focus on the new row
-        setTimeout(() => {
-            gridApi.ensureIndexVisible(0, 'top');
-            // Focus on the first editable cell
-            const firstRowNode = gridApi.getDisplayedRowAtIndex(0);
-            if (firstRowNode) {
-                gridApi.setFocusedCell(0, 'tripStartDate');
-            }
-        }, 100);
-    } else {
-        // Fallback: Get all data, add at beginning, and set back
-        let allRowData = [];
-        gridApi.forEachNode((node) => {
-            allRowData.push(node.data);
-        });
-        
-        allRowData.unshift(newTrip);
-        
-        if (typeof gridApi.setRowData === 'function') {
-            gridApi.setRowData(allRowData);
-        } else if (typeof gridApi.setGridOption === 'function') {
-            gridApi.setGridOption('rowData', allRowData);
-        }
-        
-        setTimeout(() => {
-            gridApi.ensureIndexVisible(0, 'top');
-        }, 100);
+    if (typeof gridApi.paginationGoToPage === 'function') {
+        gridApi.paginationGoToPage(0);
     }
+    
+    setTimeout(() => {
+        if (typeof gridApi.setFocusedCell === 'function') {
+            gridApi.setFocusedCell(0, 'tripStartDate', 'top');
+        }
+        if (typeof gridApi.startEditingCell === 'function') {
+            gridApi.startEditingCell({
+                rowIndex: 0,
+                colKey: 'tripStartDate',
+                rowPinned: 'top'
+            });
+        }
+    }, 100);
     
     utils.showToast('New row added at the top', 'success');
 }
@@ -1334,7 +1291,10 @@ function addNewRow() {
 async function saveRowAG(tripId) {
     if (!gridApi) return;
     
-    const rowNode = gridApi.getRowNode(tripId);
+    let rowNode = gridApi.getRowNode(tripId);
+    if (!rowNode) {
+        rowNode = findPinnedRowById(tripId);
+    }
     if (!rowNode) return;
     
     const trip = rowNode.data;
@@ -1397,7 +1357,9 @@ async function saveRowAG(tripId) {
         
         const updatedTrip = normalizeTripFromApi(response);
         if (trip.id.startsWith('trip_new_')) {
-            await loadTripsData(true);
+            const pinned = getPinnedTopRowData().filter((row) => row.id !== trip.id);
+            setPinnedTopRowData(pinned);
+            refreshTripsData();
         } else {
             Object.assign(rowNode.data, updatedTrip);
             rowNode.data.locked = updatedTrip.status === 'closed';
@@ -1415,13 +1377,14 @@ async function saveRowAG(tripId) {
 async function deleteRowAG(tripId) {
     if (!gridApi) return;
     
-    const rowNode = gridApi.getRowNode(tripId);
-    if (!rowNode) return;
-    
     if (tripId.startsWith('trip_new_')) {
-        gridApi.applyTransaction({ remove: [rowNode.data] });
+        const pinned = getPinnedTopRowData().filter((row) => row.id !== tripId);
+        setPinnedTopRowData(pinned);
         return;
     }
+    
+    const rowNode = gridApi.getRowNode(tripId);
+    if (!rowNode) return;
     
     const confirmed = await utils.confirmDialog(
         'Are you sure you want to delete this trip? This action cannot be undone.',
@@ -1444,7 +1407,7 @@ async function deleteRowAG(tripId) {
                 }
             }
             gridApi.applyTransaction({ remove: [rowNode.data] });
-            await loadTripsData(true);
+            refreshTripsData();
             utils.showToast('Trip deleted successfully', 'success');
         } catch (error) {
             console.error('Error deleting trip:', error);
@@ -1457,7 +1420,10 @@ async function deleteRowAG(tripId) {
 function enableRowEdit(tripId) {
     if (!gridApi) return;
     
-    const rowNode = gridApi.getRowNode(tripId);
+    let rowNode = gridApi.getRowNode(tripId);
+    if (!rowNode) {
+        rowNode = findPinnedRowById(tripId);
+    }
     if (!rowNode) return;
     
     rowNode.data._originalTrip = { ...rowNode.data };
@@ -1470,7 +1436,10 @@ function enableRowEdit(tripId) {
 function cancelRowEdit(tripId) {
     if (!gridApi) return;
     
-    const rowNode = gridApi.getRowNode(tripId);
+    let rowNode = gridApi.getRowNode(tripId);
+    if (!rowNode) {
+        rowNode = findPinnedRowById(tripId);
+    }
     if (!rowNode) return;
     
     const originalTrip = rowNode.data._originalTrip;
@@ -1583,7 +1552,7 @@ function setupEventListeners() {
             if (typeof gridApi.paginationGoToFirstPage === 'function') {
                 gridApi.paginationGoToFirstPage();
             }
-            loadTripsData();
+            refreshTripsData();
         }, 300));
     }
 
@@ -1594,7 +1563,7 @@ function setupEventListeners() {
             if (typeof gridApi.paginationGoToFirstPage === 'function') {
                 gridApi.paginationGoToFirstPage();
             }
-            loadTripsData(true);
+            refreshTripsData();
         });
     }
     
@@ -1648,7 +1617,7 @@ function setupEventListeners() {
             if (typeof gridApi.paginationGoToFirstPage === 'function') {
                 gridApi.paginationGoToFirstPage();
             }
-            loadTripsData(true);
+            refreshTripsData();
             utils.showToast('Date filters cleared', 'info');
         });
     }
@@ -1823,7 +1792,10 @@ function setupNavigation() {
 function openExpenseBreakdown(tripId) {
     if (!gridApi) return;
     
-    const rowNode = gridApi.getRowNode(tripId);
+    let rowNode = gridApi.getRowNode(tripId);
+    if (!rowNode) {
+        rowNode = findPinnedRowById(tripId);
+    }
     if (!rowNode) return;
     
     const trip = rowNode.data;
@@ -1894,7 +1866,10 @@ function updateExpenseBreakdownTotal() {
 function saveExpenseBreakdown() {
     if (!currentExpenseBreakdownRow || !gridApi) return;
     
-    const rowNode = gridApi.getRowNode(currentExpenseBreakdownRow);
+    let rowNode = gridApi.getRowNode(currentExpenseBreakdownRow);
+    if (!rowNode) {
+        rowNode = findPinnedRowById(currentExpenseBreakdownRow);
+    }
     if (!rowNode) return;
     
     const form = document.getElementById('expenseBreakdownForm');

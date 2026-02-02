@@ -4,6 +4,10 @@
     margin-top: var(--spacing-base);
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    --ag-row-height: 44px;
+    --ag-header-height: 48px;
+    height: calc(100vh - 260px);
+    min-height: 520px;
 }
 
 .ag-theme-alpine {
@@ -211,6 +215,17 @@
 
     .toolbar-search {
         flex: 1 1 100%;
+    }
+
+    .trips-table-content {
+        padding: var(--spacing-base);
+    }
+
+    #tripsGridContainer {
+        --ag-row-height: 44px;
+        --ag-header-height: 48px;
+        height: calc(100vh - 240px);
+        min-height: 480px;
     }
 }
 
