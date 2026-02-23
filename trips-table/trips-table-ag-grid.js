@@ -225,7 +225,7 @@ async function loadExpenseMaster() {
     try {
         let data;
         if (window.api && typeof window.api.get === 'function') {
-            const response = await window.api.get('/masters/expenses');
+            const response = await window.api.get('/masters/expenses/');
             if (!response.success) {
                 throw new Error(response.error || `API request failed: ${response.status}`);
             }

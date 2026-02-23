@@ -81,6 +81,7 @@ async function login(username, password) {
 
 // Logout function
 function logout() {
+    console.trace('🚨 auth.logout() CALLED');
     if (typeof storage !== 'undefined' && storage.SessionStorage) {
         storage.SessionStorage.clear();
     }
@@ -214,12 +215,12 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Protect routes (except login page)
-    if (window.location.pathname !== '/index.html' && !window.location.pathname.endsWith('index.html')) {
-        if (!protectRoute()) {
-            return;
-        }
-        updateUserInfo();
-    }
+    // if (window.location.pathname !== '/index.html' && !window.location.pathname.endsWith('index.html')) {
+    //     if (!protectRoute()) {
+    //         return;
+    //     }
+    //     updateUserInfo();
+    // }
 });
 
 // Export auth functions

@@ -7,23 +7,23 @@ const MastersAPI = {
     // Generic CRUD operations
     async getAll(entity, params = {}) {
         const queryParams = new URLSearchParams();
+    
         if (params.page) queryParams.append('page', params.page);
         if (params.page_size) queryParams.append('page_size', params.page_size);
         if (params.search) queryParams.append('search', params.search);
         if (params.is_active !== undefined) queryParams.append('is_active', params.is_active);
         if (params.partner_type) queryParams.append('partner_type', params.partner_type);
-        
-        const url = `${this.baseURL}/masters/${entity}${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
-        
-        try {
-            const response = await fetch(url);
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            return await response.json();
-        } catch (error) {
-            console.error(`Error fetching ${entity}:`, error);
-            throw error;
+    
+        const query = queryParams.toString();
+        const url = `${this.baseURL}/masters/${entity}/${query ? `?${query}` : ''}`;
+    
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
+        return response.json();
     },
+    
     
     async getById(entity, id) {
         const url = `${this.baseURL}/masters/${entity}/${id}`;
@@ -38,24 +38,22 @@ const MastersAPI = {
     },
     
     async create(entity, data) {
-        const url = `${this.baseURL}/masters/${entity}`;
-        try {
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(data)
-            });
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.detail || `HTTP error! status: ${response.status}`);
-            }
-            return await response.json();
-        } catch (error) {
-            console.error(`Error creating ${entity}:`, error);
-            throw error;
+        const url = `${this.baseURL}/masters/${entity}/`; // 👈 trailing slash FIX
+    
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+    
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || `HTTP error! status: ${response.status}`);
         }
+    
+        return response.json();
     },
     
     async update(entity, id, data) {

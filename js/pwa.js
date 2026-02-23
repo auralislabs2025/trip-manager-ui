@@ -1,17 +1,24 @@
 // PWA Installation and Service Worker Registration
 
-// Disable service worker to avoid UI caching
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.getRegistrations()
-            .then((registrations) => {
-                registrations.forEach((registration) => registration.unregister());
-            })
-            .catch((error) => {
-                console.warn('Service Worker unregister failed:', error);
-            });
-    });
-}
+// Register service worker
+// if ('serviceWorker' in navigator) {
+//     // Only register service worker if running on http/https (not file://)
+//     if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
+//         window.addEventListener('load', () => {
+//             navigator.serviceWorker.register('/service-worker.js')
+//                 .then((registration) => {
+//                     console.log('Service Worker registered:', registration);
+//                 })
+//                 .catch((error) => {
+//                     if (!error.message.includes('protocol')) {
+//                         console.error('Service Worker registration failed:', error);
+//                     }
+//                 });
+//         });
+//     }
+// }
+
+console.warn('🚫 PWA / Service Worker disabled');
 
 // Handle install prompt
 let deferredPrompt;

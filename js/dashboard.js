@@ -6,6 +6,8 @@ let tripStatusChart = null;
 
 // Initialize dashboard
 function initDashboard() {
+    console.count('🚨 initDashboard called');
+
     if (!auth.protectRoute()) return;
     
     updateMetrics();

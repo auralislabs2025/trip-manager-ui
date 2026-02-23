@@ -6,7 +6,9 @@ const ENVIRONMENT = 'development'; // ← Change this to switch environments
 
 const ENV_CONFIG = {
     development: {
-        API_BASE_URL: 'http://localhost:8000/api/v1',
+        // Frontend served by Nginx (local Docker)
+        // Nginx proxies /api/v1 -> backend:8000
+        API_BASE_URL: '/api/v1',
         ENVIRONMENT: 'development'
     },
     staging: {

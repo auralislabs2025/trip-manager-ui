@@ -1,6 +1,6 @@
 // Service Worker for PWA Offline Support
 
-const CACHE_NAME = 'truck-management-v3';
+const CACHE_NAME = 'truck-management-v45555';
 const urlsToCache = [
     '/',
     '/index.html',
@@ -59,45 +59,45 @@ self.addEventListener('activate', (event) => {
 
 // Fetch event - serve from cache, fallback to network
 self.addEventListener('fetch', (event) => {
-    const requestUrl = new URL(event.request.url);
-    if (requestUrl.protocol !== 'http:' && requestUrl.protocol !== 'https:') {
+    const url = new URL(event.request.url);
+
+    // 🚫 DO NOT touch API requests
+    if (url.pathname.startsWith('/api')) {
         return;
     }
+
+    // 🚫 DO NOT touch cross-origin requests (CDNs, APIs)
+    if (url.origin !== self.location.origin) {
+        return;
+    }
+
     event.respondWith(
-        caches.match(event.request)
-            .then((response) => {
-                // Cache hit - return response
-                if (response) {
-                    return response;
+        caches.match(event.request).then((cachedResponse) => {
+            if (cachedResponse) {
+                return cachedResponse;
+            }
+
+            return fetch(event.request).then((networkResponse) => {
+                // Only cache valid same-origin responses
+                if (
+                    !networkResponse ||
+                    networkResponse.status !== 200 ||
+                    networkResponse.type !== 'basic'
+                ) {
+                    return networkResponse;
                 }
-                
-                // Clone the request
-                const fetchRequest = event.request.clone();
-                
-                return fetch(fetchRequest).then((response) => {
-                    // Check if valid response
-                    if (!response || response.status !== 200 || response.type !== 'basic') {
-                        return response;
-                    }
-                    
-                    // Clone the response
-                    const responseToCache = response.clone();
-                    
-                    caches.open(CACHE_NAME)
-                        .then((cache) => {
-                            cache.put(event.request, responseToCache);
-                        });
-                    
-                    return response;
-                }).catch(() => {
-                    // Network request failed - return offline page if available
-                    if (event.request.destination === 'document') {
-                        return caches.match('/index.html');
-                    }
+
+                const responseToCache = networkResponse.clone();
+                caches.open(CACHE_NAME).then((cache) => {
+                    cache.put(event.request, responseToCache);
                 });
-            })
+
+                return networkResponse;
+            });
+        })
     );
 });
+
 
 // Background sync (for future use)
 self.addEventListener('sync', (event) => {
