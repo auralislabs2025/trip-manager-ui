@@ -27,11 +27,6 @@ def get_current_user(
 
 # Dependency to get database session
 def get_db():
-    """Dependency to get database session - returns None if database unavailable"""
-    if SessionLocal is None:
-        yield None
-        return
-    
     db = SessionLocal()
     try:
         yield db
