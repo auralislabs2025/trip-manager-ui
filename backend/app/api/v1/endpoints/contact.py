@@ -88,10 +88,13 @@ def _build_thankyou_html(name: str) -> str:
     """
 
 
+SENDER_DISPLAY = "auralislabs. <team@aulab.in>"
+
+
 def _send_email(to: str, subject: str, plain: str, html: str, reply_to: str = None):
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
-    msg["From"] = settings.SMTP_EMAIL
+    msg["From"] = SENDER_DISPLAY
     msg["To"] = to
     if reply_to:
         msg["Reply-To"] = reply_to
@@ -104,7 +107,7 @@ def _send_email(to: str, subject: str, plain: str, html: str, reply_to: str = No
         server.send_message(msg)
 
 
-@router.post("", response_model=ContactResponse)
+@router.post("/send", response_model=ContactResponse)
 async def send_contact_email(data: ContactRequest):
     if not settings.SMTP_EMAIL or not settings.SMTP_APP_PASSWORD:
         logger.error("SMTP credentials not configured")
