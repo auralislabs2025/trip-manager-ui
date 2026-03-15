@@ -20,6 +20,10 @@ class Settings(BaseSettings):
     JWT_SECRET_KEY: str
     JWT_ALGORITHM: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int
+
+    # SMTP (for contact form)
+    SMTP_EMAIL: Optional[str] = None
+    SMTP_APP_PASSWORD: Optional[str] = None
     
     @property
     def DATABASE_URL(self) -> str:
