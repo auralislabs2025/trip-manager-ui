@@ -51,7 +51,7 @@ def _build_html_body(name: str, email: str, message: str) -> str:
     """
 
 
-@router.post("/", response_model=ContactResponse)
+@router.post("", response_model=ContactResponse)
 async def send_contact_email(data: ContactRequest):
     if not settings.SMTP_EMAIL or not settings.SMTP_APP_PASSWORD:
         logger.error("SMTP credentials not configured")
