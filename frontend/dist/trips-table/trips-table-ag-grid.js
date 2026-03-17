@@ -1619,6 +1619,17 @@ function setupEventListeners() {
         });
     }
     
+    // Master data modal: capitalize while typing
+    const masterDataInput = document.getElementById('masterDataInput');
+    if (masterDataInput) {
+        masterDataInput.addEventListener('input', function () {
+            var start = this.selectionStart;
+            var end = this.selectionEnd;
+            this.value = this.value.toUpperCase();
+            this.setSelectionRange(start, end);
+        });
+    }
+    
     // Master data modal handlers
     const masterDataForm = document.getElementById('masterDataForm');
     const masterDataModalClose = document.getElementById('masterDataModalClose');

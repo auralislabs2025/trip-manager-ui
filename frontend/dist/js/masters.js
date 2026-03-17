@@ -464,6 +464,21 @@ window.MastersModal = MastersModal;
 window.MastersValidation = MastersValidation;
 window.MastersNavigation = MastersNavigation;
 
+// Capitalize name/identifier fields while typing (masters creation forms)
+function setupCapitalizeInputs() {
+    const selector = 'input[name="name"], input[name="vehicle_number"], input[name="current_driver_name"], input[name="location"]';
+    document.querySelectorAll(selector).forEach(function(input) {
+        if (input._capitalizeAttached) return;
+        input._capitalizeAttached = true;
+        input.addEventListener('input', function() {
+            var start = this.selectionStart;
+            var end = this.selectionEnd;
+            this.value = this.value.toUpperCase();
+            this.setSelectionRange(start, end);
+        });
+    });
+}
+
 // Auto-setup master menu on page load (only if not on login page)
 document.addEventListener('DOMContentLoaded', function() {
     // Only setup master menu if we're not on the login page
@@ -474,5 +489,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!isLoginPage) {
         MastersNavigation.setupMasterMenu();
     }
+    
+    // Capitalize name fields while typing on masters pages
+    setupCapitalizeInputs();
 });
 
