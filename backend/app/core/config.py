@@ -32,6 +32,8 @@ class Settings(BaseSettings):
         env_file = ".env"
         env_prefix = "TRIP_TRACKER_"
         env_file_encoding = "utf-8"
+        extra = "ignore"
+        extra = "ignore"
     @property
     def is_production(self) -> bool:
         return self.APP_ENV == "production"
