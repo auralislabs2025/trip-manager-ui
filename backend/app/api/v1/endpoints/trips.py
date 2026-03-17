@@ -3,7 +3,9 @@ from typing import List, Dict, Any, Optional
 from app.api.deps import get_db, get_current_user
 from app.repositories.trip_repo import TripRepository
 from app.schemas.trip import TripCreate, TripResponse, TripUpdate
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
+from app.models.trip import Trip
+from app.models.trip_expense import TripExpense
 from app.models.driver import Driver
 from app.models.vehicle import Vehicle
 from app.models.item import Item
@@ -108,33 +110,41 @@ async def get_trip_masters(db = Depends(get_db)):
     }
 
 
-@router.get("/{trip_id}")
+@router.get("/{trip_id}", response_model=Dict[str, Any])
 async def get_trip_by_id(trip_id: str, db: Optional[Session] = Depends(get_db)):
     """
-    Get a specific trip by ID from the database (with JSON fallback)
+    Get a specific trip by ID. Returns serialized trip with expense_items (including notes).
     """
     try:
         trip_repo = TripRepository(db)
-        trip = trip_repo.get_by_id(trip_id)
-        
-        if not trip:
+        loaded = _trip_with_expenses(db, trip_id)
+        if not loaded:
             raise HTTPException(status_code=404, detail=f"Trip with ID {trip_id} not found")
-        
-        return trip
+        return trip_repo._serialize_trip(loaded)
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching trip: {str(e)}")
 
 
+def _trip_with_expenses(db: Session, trip_id: str):
+    """Load trip with trip_expenses and expense for serialization."""
+    return db.query(Trip).options(
+        joinedload(Trip.trip_expenses).joinedload(TripExpense.expense)
+    ).filter(Trip.id == trip_id).first()
+
+
 @router.post("/", response_model=TripResponse)
-async def create_trip(trip: TripCreate, db: Optional[Session] = Depends(get_db),user_id: str = Depends(get_current_user)):
+async def create_trip(trip: TripCreate, db: Optional[Session] = Depends(get_db), user_id: str = Depends(get_current_user)):
     """
     Create a new trip
     """
     try:
         service = TripService(db)
-        return service.create_trip(trip, user_id)
+        created = service.create_trip(trip, user_id)
+        trip_repo = TripRepository(db)
+        loaded = _trip_with_expenses(db, created.id)
+        return trip_repo._serialize_trip(loaded) if loaded else trip_repo._serialize_trip(created)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error creating trip: {str(e)}")
 
@@ -147,7 +157,12 @@ def update_trip(
     user_id: str = Depends(get_current_user)
 ):
     service = TripService(db)
-    return service.update_trip(trip_id, trip, user_id)
+    service.update_trip(trip_id, trip, user_id)
+    trip_repo = TripRepository(db)
+    loaded = _trip_with_expenses(db, trip_id)
+    if not loaded:
+        raise HTTPException(status_code=404, detail="Trip not found")
+    return trip_repo._serialize_trip(loaded)
 
 
 

@@ -301,7 +301,7 @@ function normalizeTripFromApi(trip) {
     normalized.status = trip.status ?? 'draft';
     normalized.locked = trip.locked ?? (normalized.status === 'closed');
     normalized.expenses = trip.expenses || {};
-    normalized.expense_items = trip.expense_items || [];
+    normalized.expense_items = trip.expense_items || trip.expenseItems || [];
     return normalized;
 }
 
@@ -563,6 +563,42 @@ function getResponsiveWidth(smallWidth, largeWidth) {
     return largeWidth;
 }
 
+// Normalize any date to YYYY-MM-DD using local date (avoids UTC shift when user selects a date)
+function dateToLocalYYYYMMDD(value) {
+    if (value === null || value === undefined) return '';
+    const d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return '';
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+}
+
+// What we store in row data: always YYYY-MM-DD string (local date). agDateCellEditor can return a Date object.
+function normalizeStoredDate(newValue) {
+    if (newValue === null || newValue === undefined || newValue === '') return '';
+    return dateToLocalYYYYMMDD(newValue);
+}
+
+// Normalize any date string to YYYY-MM-DD for date editor (display stays DD/MM/YYYY via utils.formatDate)
+function dateStringToYYYYMMDD(value) {
+    if (value === null || value === undefined) return '';
+    if (value instanceof Date) return dateToLocalYYYYMMDD(value);
+    const dateString = String(value).trim();
+    if (!dateString) return '';
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) return dateString;
+    if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(dateString)) {
+        const parts = dateString.split('/');
+        const d = parts[0].padStart(2, '0');
+        const m = parts[1].padStart(2, '0');
+        const y = parts[2];
+        return `${y}-${m}-${d}`;
+    }
+    const dateObj = new Date(value);
+    if (!isNaN(dateObj.getTime())) return dateToLocalYYYYMMDD(dateObj);
+    return dateString;
+}
+
 // Get column definitions
 function getColumnDefs() {
     return [
@@ -605,18 +641,10 @@ function getColumnDefs() {
             },
             valueGetter: (params) => {
                 if (!params.data?.tripStartDate) return '';
-                const date = params.data.tripStartDate;
-                const dateString = typeof date === 'string' ? date : String(date);
-                if (dateString.includes('-')) return dateString;
-                // Convert to YYYY-MM-DD for editing
-                const dateObj = new Date(date);
-                if (!isNaN(dateObj.getTime())) {
-                    return dateObj.toISOString().split('T')[0];
-                }
-                return dateString;
+                return dateStringToYYYYMMDD(params.data.tripStartDate);
             },
             valueSetter: (params) => {
-                params.data.tripStartDate = params.newValue;
+                params.data.tripStartDate = normalizeStoredDate(params.newValue);
                 return true;
             }
         },
@@ -638,17 +666,10 @@ function getColumnDefs() {
             },
             valueGetter: (params) => {
                 if (!params.data?.estimatedEndDate) return '';
-                const date = params.data.estimatedEndDate;
-                const dateString = typeof date === 'string' ? date : String(date);
-                if (dateString.includes('-')) return dateString;
-                const dateObj = new Date(date);
-                if (!isNaN(dateObj.getTime())) {
-                    return dateObj.toISOString().split('T')[0];
-                }
-                return dateString;
+                return dateStringToYYYYMMDD(params.data.estimatedEndDate);
             },
             valueSetter: (params) => {
-                params.data.estimatedEndDate = params.newValue;
+                params.data.estimatedEndDate = normalizeStoredDate(params.newValue);
                 return true;
             }
         },
@@ -798,7 +819,13 @@ function getColumnDefs() {
             cellEditor: 'agNumberCellEditor',
             cellEditorParams: {
                 min: 0,
-                step: 0.1
+                step: 0.01,
+                precision: 4
+            },
+            valueFormatter: (params) => {
+                if (params.value === null || params.value === undefined || params.value === '') return '';
+                const n = parseFloat(params.value);
+                return isNaN(n) ? '' : Number(n).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 4 });
             },
             onCellValueChanged: (params) => {
                 updateCalculatedFields(params.data);
@@ -1091,7 +1118,8 @@ function setTripsDatasource() {
                 const trips = (response.items || []).map(normalizeTripFromApi).map((trip) => {
                     const mergedTrip = {
                         ...trip,
-                        locked: trip.status === 'closed'
+                        locked: trip.status === 'closed',
+                        expense_items: trip.expense_items || trip.expenseItems || []
                     };
                     if (mastersReady) {
                         applyMasterMappingsToTrip(mergedTrip);
@@ -1260,7 +1288,8 @@ function addNewRow() {
     const newTripId = `trip_new_${Date.now()}`;
     const newTrip = {
         id: newTripId,
-        tripStartDate: utils.getTodayDate(),
+        tripStartDate: '',
+        estimatedEndDate: '',
         status: 'draft',
         locked: false
     };
@@ -1363,7 +1392,11 @@ async function saveRowAG(tripId) {
             setPinnedTopRowData(pinned);
             refreshTripsData();
         } else {
+            const existingExpenseItems = rowNode.data.expense_items && rowNode.data.expense_items.length > 0 ? rowNode.data.expense_items : null;
             Object.assign(rowNode.data, updatedTrip);
+            if (existingExpenseItems && (!updatedTrip.expense_items || updatedTrip.expense_items.length === 0)) {
+                rowNode.data.expense_items = existingExpenseItems;
+            }
             rowNode.data.locked = updatedTrip.status === 'closed';
             rowNode.data._originalTrip = null;
             gridApi.refreshCells({ rowNodes: [rowNode], force: true });
@@ -1825,20 +1858,42 @@ function openExpenseBreakdown(tripId) {
             }
 
             const expenses = trip.expenses || {};
+            const expenseItems = trip.expense_items || trip.expenseItems || [];
+            const notesByExpense = {};
+            expenseItems.forEach(item => {
+                const name = item.expense_name || item.expenseName;
+                if (name) {
+                    const key = expenseKeyFromName(name);
+                    notesByExpense[key] = (item.notes !== undefined && item.notes !== null) ? String(item.notes) : '';
+                }
+            });
+            const escapeAttr = (s) => String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
             form.innerHTML = expenseTypes.map(expense => {
                 const expenseKey = expenseKeyFromName(expense);
-                const value = expenses[expenseKey] || 0;
+                const rawValue = expenses[expenseKey] || 0;
+                const value = (rawValue === 0 || rawValue === '0') ? '' : rawValue;
+                const notes = notesByExpense[expenseKey] || '';
                 return `
                     <div class="expense-breakdown-item">
-                        <label>${expense} (₹)</label>
-                        <input type="number" 
-                               class="input" 
-                               id="expense_${expenseKey}" 
-                               value="${value}" 
-                               step="1" 
-                               min="0" 
-                               oninput="updateExpenseBreakdownTotal()"
-                               placeholder="0">
+                        <div class="expense-breakdown-row">
+                            <label>${expense} (₹)</label>
+                            <input type="number" 
+                                   class="input expense-amount-input" 
+                                   id="expense_${expenseKey}" 
+                                   value="${value}" 
+                                   min="0" 
+                                   step="0.01"
+                                   oninput="updateExpenseBreakdownTotal()"
+                                   placeholder="">
+                        </div>
+                        <div class="expense-breakdown-notes">
+                            <label for="notes_${expenseKey}">Notes</label>
+                            <input type="text" 
+                                   class="input" 
+                                   id="notes_${expenseKey}" 
+                                   value="${escapeAttr(notes)}" 
+                                   placeholder="Optional notes for ${expense}">
+                        </div>
                     </div>
                 `;
             }).join('');
@@ -1877,24 +1932,35 @@ function saveExpenseBreakdown() {
     const form = document.getElementById('expenseBreakdownForm');
     if (!form) return;
     
-    const inputs = form.querySelectorAll('input[type="number"]');
+    const amountInputs = form.querySelectorAll('input[type="number"]');
     const expenses = {};
     let total = 0;
     
-    inputs.forEach(input => {
+    amountInputs.forEach(input => {
         const expenseKey = input.id.replace('expense_', '');
         const value = parseFloat(input.value) || 0;
         expenses[expenseKey] = value;
         total += value;
     });
+
+    const notesInputs = form.querySelectorAll('input[id^="notes_"]');
+    const notesByKey = {};
+    notesInputs.forEach(input => {
+        const expenseKey = input.id.replace('notes_', '');
+        notesByKey[expenseKey] = (input.value || '').trim();
+    });
     
     rowNode.data.expenses = expenses;
     rowNode.data.totalExpenses = total;
-    rowNode.data.expense_items = expenseTypes.map(expense => ({
-        expense_id: expenseNameToId[expense] || null,
-        expense_name: expense,
-        amount: expenses[expenseKeyFromName(expense)] || 0
-    }));
+    rowNode.data.expense_items = expenseTypes.map(expense => {
+        const key = expenseKeyFromName(expense);
+        return {
+            expense_id: expenseNameToId[expense] || null,
+            expense_name: expense,
+            amount: expenses[key] || 0,
+            notes: notesByKey[key] || null
+        };
+    });
     
     // Update calculations
     updateCalculatedFields(rowNode.data);

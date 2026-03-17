@@ -271,7 +271,8 @@ function addNewRow() {
     const newTripId = `trip_new_${Date.now()}`;
     const newTrip = {
         id: newTripId,
-        tripStartDate: utils.getTodayDate(),
+        tripStartDate: '',
+        estimatedEndDate: '',
         status: 'draft'
     };
     
@@ -625,7 +626,7 @@ function enableInlineEditing(cell) {
     input.className = 'cell-input';
     
     if (field.includes('Km') || field === 'tonnage' || field === 'rate' || field === 'advance') {
-        input.step = field.includes('Km') ? '0.1' : '1';
+        input.step = (field.includes('Km') || field === 'tonnage') ? '0.01' : (field === 'rate' ? '0.01' : '1');
         input.min = '0';
     }
     

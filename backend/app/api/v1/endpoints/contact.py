@@ -1,7 +1,5 @@
-import smtplib
+import httpx
 import logging
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, EmailStr
@@ -12,6 +10,8 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+RESEND_API = "https://api.resend.com/emails"
+SENDER = "auralislabs. <team@aulab.in>"
 RECIPIENT = "team@aulab.in"
 
 
@@ -56,7 +56,7 @@ def _build_thankyou_html(name: str) -> str:
     <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:0;background:#ffffff;border-radius:12px;overflow:hidden;">
       <div style="background:linear-gradient(135deg,#0a0a0a 0%,#1a1a2e 100%);padding:40px 32px;text-align:center;">
         <h1 style="color:#00D1FF;font-size:28px;margin:0 0 4px;">auralislabs.</h1>
-        <p style="color:#a1a1aa;font-size:13px;margin:0;">ERP, Web Development & Smart Solutions</p>
+        <p style="color:#a1a1aa;font-size:13px;margin:0;">ERP, Web Development &amp; Smart Solutions</p>
       </div>
       <div style="padding:32px;">
         <h2 style="color:#0f172a;font-size:22px;margin:0 0 16px;">Hi {name},</h2>
@@ -88,29 +88,34 @@ def _build_thankyou_html(name: str) -> str:
     """
 
 
-SENDER_DISPLAY = "auralislabs. <team@aulab.in>"
-
-
-def _send_email(to: str, subject: str, plain: str, html: str, reply_to: str = None):
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = subject
-    msg["From"] = SENDER_DISPLAY
-    msg["To"] = to
+async def _send_email(to: str, subject: str, html: str, reply_to: str = None):
+    payload = {
+        "from": SENDER,
+        "to": [to],
+        "subject": subject,
+        "html": html,
+    }
     if reply_to:
-        msg["Reply-To"] = reply_to
-    msg.attach(MIMEText(plain, "plain"))
-    msg.attach(MIMEText(html, "html"))
+        payload["reply_to"] = reply_to
 
-    with smtplib.SMTP("smtp.gmail.com", 587) as server:
-        server.starttls()
-        server.login(settings.SMTP_EMAIL, settings.SMTP_APP_PASSWORD)
-        server.send_message(msg)
+    async with httpx.AsyncClient() as client:
+        resp = await client.post(
+            RESEND_API,
+            headers={
+                "Authorization": f"Bearer {settings.RESEND_API_KEY}",
+                "Content-Type": "application/json",
+            },
+            json=payload,
+        )
+        if resp.status_code not in (200, 201):
+            raise Exception(f"Resend API error {resp.status_code}: {resp.text}")
+        return resp.json()
 
 
-@router.post("/send", response_model=ContactResponse)
+@router.post("", response_model=ContactResponse)
 async def send_contact_email(data: ContactRequest):
-    if not settings.SMTP_EMAIL or not settings.SMTP_APP_PASSWORD:
-        logger.error("SMTP credentials not configured")
+    if not settings.RESEND_API_KEY:
+        logger.error("RESEND_API_KEY not configured")
         raise HTTPException(status_code=500, detail="Mail service not configured")
 
     name = data.name.strip()
@@ -121,28 +126,18 @@ async def send_contact_email(data: ContactRequest):
         raise HTTPException(status_code=422, detail="Name and message are required")
 
     try:
-        _send_email(
+        await _send_email(
             to=RECIPIENT,
             subject=f"New Contact Form: {name}",
-            plain=f"Name: {name}\nEmail: {email}\n\nMessage:\n{message}",
             html=_build_notification_html(name, email, message),
             reply_to=email,
         )
         logger.info(f"Contact email sent from {email} ({name})")
 
         try:
-            _send_email(
+            await _send_email(
                 to=email,
                 subject="Thank you for contacting auralislabs.",
-                plain=(
-                    f"Hi {name},\n\n"
-                    "Thank you for reaching out! We've received your message "
-                    "and our team will review it shortly.\n\n"
-                    "We typically respond within 24 hours on business days.\n\n"
-                    "Phone: +91 999 555 0958\n"
-                    "Email: team@aulab.in\n\n"
-                    "Warm regards,\nTeam auralislabs."
-                ),
                 html=_build_thankyou_html(name),
             )
             logger.info(f"Thank-you email sent to {email}")
@@ -150,9 +145,6 @@ async def send_contact_email(data: ContactRequest):
             logger.warning(f"Thank-you email failed for {email}: {e}")
 
         return ContactResponse(success=True, message="Message sent successfully")
-    except smtplib.SMTPAuthenticationError:
-        logger.error("SMTP authentication failed")
-        raise HTTPException(status_code=500, detail="Mail authentication failed")
     except Exception as e:
         logger.error(f"Failed to send contact email: {e}")
         raise HTTPException(status_code=500, detail="Failed to send message")

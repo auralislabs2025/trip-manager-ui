@@ -188,6 +188,7 @@ class TripRepository:
                     "expense_id": trip_expense.expense_id,
                     "expense_name": expense_name,
                     "amount": trip_expense.amount,
+                    "notes": getattr(trip_expense, "notes", None),  # always include for API/frontend
                 })
                 if expense_name:
                     key = expense_name.strip().lower().replace(" ", "_")

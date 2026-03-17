@@ -673,9 +673,6 @@
 }
 
 .expense-breakdown-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
     padding: var(--spacing-base);
     border-bottom: 1px solid var(--color-border);
 }
@@ -684,15 +681,49 @@
     border-bottom: none;
 }
 
-.expense-breakdown-item label {
+.expense-breakdown-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.expense-breakdown-row label {
     font-weight: var(--font-weight-medium);
     color: var(--color-text-primary);
     flex: 1;
 }
 
-.expense-breakdown-item input {
+.expense-breakdown-row input {
     width: 150px;
     text-align: right;
+}
+
+/* Hide number input spinner/stepper in expense modal */
+#expenseBreakdownModal .expense-amount-input::-webkit-outer-spin-button,
+#expenseBreakdownModal .expense-amount-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+#expenseBreakdownModal .expense-amount-input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+.expense-breakdown-notes {
+    margin-top: var(--spacing-xs);
+}
+
+.expense-breakdown-notes label {
+    display: block;
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+    margin-bottom: 2px;
+}
+
+.expense-breakdown-notes input {
+    width: 100%;
+    text-align: left;
+    box-sizing: border-box;
 }
 
 .expense-total-section {

@@ -8,15 +8,15 @@ function formatCurrency(amount) {
     return '₹' + new Intl.NumberFormat('en-IN').format(amount.toFixed(2));
 }
 
-// Format date
+// Format date - always DD/MM/YYYY for consistent display (no locale variance)
 function formatDate(dateString) {
-    if (!dateString) return '-';
+    if (!dateString) return '';
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-IN', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-    });
+    if (isNaN(date.getTime())) return '';
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
 }
 
 // Format date with time
