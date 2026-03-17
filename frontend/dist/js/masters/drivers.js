@@ -199,7 +199,7 @@ async function saveDriver() {
     const formData = new FormData(form);
     
     const data = {
-        name: formData.get('name'),
+        name: (formData.get('name') || '').toString().trim().toUpperCase(),
         phone: formData.get('phone') || null,
         license_number: formData.get('license_number'),
         is_active: document.getElementById('is_active').checked

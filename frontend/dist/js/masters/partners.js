@@ -223,7 +223,7 @@ async function savePartner() {
     const formData = new FormData(form);
     
     const data = {
-        name: formData.get('name'),
+        name: (formData.get('name') || '').toString().trim().toUpperCase(),
         partner_type: formData.get('partner_type'),
         contact_info: formData.get('contact_info') || null,
         email: formData.get('email') || null,

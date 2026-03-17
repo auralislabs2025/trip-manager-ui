@@ -200,9 +200,9 @@ async function saveVehicle() {
     const formData = new FormData(form);
     
     const data = {
-        vehicle_number: formData.get('vehicle_number'),
+        vehicle_number: (formData.get('vehicle_number') || '').toString().trim().toUpperCase(),
         vehicle_type: formData.get('vehicle_type') || 'Truck',
-        current_driver_name: formData.get('current_driver_name') || null,
+        current_driver_name: (() => { const v = (formData.get('current_driver_name') || '').toString().trim().toUpperCase(); return v || null; })(),
         is_active: document.getElementById('is_active').checked
     };
     

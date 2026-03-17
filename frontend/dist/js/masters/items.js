@@ -193,7 +193,7 @@ async function saveItem() {
     const formData = new FormData(form);
     
     const data = {
-        name: formData.get('name'),
+        name: (formData.get('name') || '').toString().trim().toUpperCase(),
         description: formData.get('description') || null,
         is_active: document.getElementById('is_active').checked
     };

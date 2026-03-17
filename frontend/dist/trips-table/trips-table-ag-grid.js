@@ -1534,7 +1534,7 @@ async function saveMasterDataItem() {
         return;
     }
     
-    const newValue = input.value.trim();
+    const newValue = (input.value.trim() || '').toUpperCase();
     const { field, rowNode, storageType } = currentMasterDataContext;
     
     try {

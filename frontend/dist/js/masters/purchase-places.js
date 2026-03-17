@@ -191,8 +191,8 @@ async function savePurchasePlace() {
     const formData = new FormData(form);
     
     const data = {
-        name: formData.get('name'),
-        location: formData.get('location') || null,
+        name: (formData.get('name') || '').toString().trim().toUpperCase(),
+        location: (() => { const v = (formData.get('location') || '').toString().trim().toUpperCase(); return v || null; })(),
         is_active: document.getElementById('is_active').checked
     };
     
