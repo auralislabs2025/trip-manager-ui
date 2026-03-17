@@ -68,7 +68,7 @@ class TripRepository:
         start_date_from: Optional[str] = None,
         start_date_to: Optional[str] = None
     ) -> Dict[str, Any]:
-        """Get all trips - from database if available, else from JSON"""
+        """Get all trips from database. Returns empty result when DB not available."""
         if self.use_db:
             try:
                 query = (
@@ -104,6 +104,7 @@ class TripRepository:
                     query = query.filter(Trip.trip_start_date >= start_date_from)
                 if start_date_to:
                     query = query.filter(Trip.trip_start_date <= start_date_to)
+                # Totals: use aggregate query without ORDER BY (Postgres requires GROUP BY otherwise)
                 totals_row = query.with_entities(
                     func.coalesce(func.sum(Trip.revenue), 0.0),
                     func.coalesce(func.sum(Trip.total_expenses), 0.0),
@@ -114,6 +115,8 @@ class TripRepository:
                     "expenses": float(totals_row[1] or 0.0),
                     "profit": float(totals_row[2] or 0.0),
                 }
+                # Then order and paginate for the list
+                query = query.order_by(Trip.created_at.desc())
                 total = query.count()
                 offset = (page - 1) * page_size
                 trips = query.offset(offset).limit(page_size).all()
@@ -127,7 +130,17 @@ class TripRepository:
             except Exception as e:
                 logger.warning(f"Database query failed, {e}")
                 self.use_db = False
-    
+                raise
+
+        # No database: return empty result (valid response shape)
+        return {
+            "items": [],
+            "total": 0,
+            "page": page,
+            "page_size": page_size,
+            "totals": {"revenue": 0.0, "expenses": 0.0, "profit": 0.0},
+        }
+
     def get_by_id(self, trip_id: str) -> Trip | None:
         return self.db.query(Trip).filter(Trip.id == trip_id).first()
 

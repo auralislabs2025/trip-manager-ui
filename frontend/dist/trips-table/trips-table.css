@@ -65,6 +65,16 @@
     border-right: 1px solid #d0d0d0 !important;
 }
 
+/* Mandatory column headers – distinct color so users know they are required */
+.ag-theme-alpine .ag-header-cell.header-mandatory {
+    background: linear-gradient(180deg, #dbeafe 0%, #bfdbfe 100%);
+    color: #1e40af;
+    font-weight: 700;
+}
+.ag-theme-alpine .ag-header-cell.header-mandatory .header-icon svg {
+    stroke: #1e40af;
+}
+
 .ag-theme-alpine .ag-row {
     border-bottom: 1px solid #e0e0e0;
 }

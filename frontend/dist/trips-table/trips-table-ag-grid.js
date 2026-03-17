@@ -623,6 +623,7 @@ function getColumnDefs() {
         {
             ...getResponsiveHeaderConfig('Start Date', columnIcons['Start Date']),
             headerTooltip: 'Start Date',
+            headerClass: 'header-mandatory',
             field: 'tripStartDate',
             width: getResponsiveWidth(120, 140),
             minWidth: 120,
@@ -651,6 +652,7 @@ function getColumnDefs() {
         {
             ...getResponsiveHeaderConfig('End Date', columnIcons['End Date']),
             headerTooltip: 'End Date',
+            headerClass: 'header-mandatory',
             field: 'estimatedEndDate',
             width: getResponsiveWidth(120, 140),
             minWidth: 120,
@@ -676,6 +678,7 @@ function getColumnDefs() {
         {
             ...getResponsiveHeaderConfig('Vehicle', columnIcons['Vehicle']),
             headerTooltip: 'Vehicle',
+            headerClass: 'header-mandatory',
             field: 'vehicleNumber',
             width: getResponsiveWidth(170, 160),
             minWidth: 170,
@@ -685,7 +688,7 @@ function getColumnDefs() {
             },
             cellEditor: 'agSelectCellEditor',
             cellEditorParams: () => ({
-                values: [...masterData.vehicles, 'Add New...']
+                values: ['', ...masterData.vehicles, 'Add New...']
             }),
             valueFormatter: (params) => {
                 if (params.value === '__ADD_NEW__' || params.value === 'Add New...') return '';
@@ -695,6 +698,7 @@ function getColumnDefs() {
         {
             ...getResponsiveHeaderConfig('Driver', columnIcons['Driver']),
             headerTooltip: 'Driver',
+            headerClass: 'header-mandatory',
             field: 'driverName',
             width: getResponsiveWidth(170, 160),
             minWidth: 170,
@@ -704,7 +708,7 @@ function getColumnDefs() {
             },
             cellEditor: 'agSelectCellEditor',
             cellEditorParams: () => ({
-                values: [...masterData.drivers, 'Add New...']
+                values: ['', ...masterData.drivers, 'Add New...']
             }),
             valueFormatter: (params) => {
                 if (params.value === '__ADD_NEW__' || params.value === 'Add New...') return '';
@@ -723,7 +727,7 @@ function getColumnDefs() {
             },
             cellEditor: 'agSelectCellEditor',
             cellEditorParams: () => ({
-                values: [...masterData.partners, 'Add New...']
+                values: ['', ...masterData.partners, 'Add New...']
             }),
             valueFormatter: (params) => {
                 if (params.value === '__ADD_NEW__' || params.value === 'Add New...') return '';
@@ -733,6 +737,7 @@ function getColumnDefs() {
         {
             ...getResponsiveHeaderConfig('Purchase Place', columnIcons['Purchase Place']),
             headerTooltip: 'Purchase Place',
+            headerClass: 'header-mandatory',
             field: 'purchasePlace',
             width: getResponsiveWidth(190, 180),
             minWidth: 190,
@@ -742,7 +747,7 @@ function getColumnDefs() {
             },
             cellEditor: 'agSelectCellEditor',
             cellEditorParams: () => ({
-                values: [...masterData.purchasePlaces, 'Add New...']
+                values: ['', ...masterData.purchasePlaces, 'Add New...']
             }),
             valueFormatter: (params) => {
                 if (params.value === '__ADD_NEW__' || params.value === 'Add New...') return '';
@@ -752,6 +757,7 @@ function getColumnDefs() {
         {
             ...getResponsiveHeaderConfig('Item', columnIcons['Item']),
             headerTooltip: 'Item',
+            headerClass: 'header-mandatory',
             field: 'itemName',
             width: getResponsiveWidth(190, 180),
             minWidth: 190,
@@ -761,7 +767,7 @@ function getColumnDefs() {
             },
             cellEditor: 'agSelectCellEditor',
             cellEditorParams: () => ({
-                values: [...masterData.items, 'Add New...']
+                values: ['', ...masterData.items, 'Add New...']
             }),
             valueFormatter: (params) => {
                 if (params.value === '__ADD_NEW__' || params.value === 'Add New...') return '';
@@ -808,6 +814,7 @@ function getColumnDefs() {
         {
             ...getResponsiveHeaderConfig('Tonnage', columnIcons['Tonnage']),
             headerTooltip: 'Tonnage',
+            headerClass: 'header-mandatory',
             field: 'tonnage',
             width: getResponsiveWidth(95, 100),
             minWidth: 95,
@@ -834,6 +841,7 @@ function getColumnDefs() {
         {
             ...getResponsiveHeaderConfig('Rate/Ton', columnIcons['Rate/Ton']),
             headerTooltip: 'Rate/Ton',
+            headerClass: 'header-mandatory',
             field: 'ratePerTon',
             width: getResponsiveWidth(95, 100),
             minWidth: 95,
@@ -1132,7 +1140,7 @@ function setTripsDatasource() {
                 params.successCallback(trips, totalRows);
             } catch (error) {
                 console.error('Error fetching trips from API:', error);
-                utils.showToast('Failed to load trips from API', 'error');
+                utils.showToast(error.message || 'Failed to load trips from API', 'error');
                 params.failCallback();
             } finally {
                 isLoadingTrips = false;
@@ -1381,7 +1389,16 @@ async function saveRowAG(tripId) {
                 body: JSON.stringify(payload)
             });
             if (!apiResponse.ok) {
-                throw new Error(`API request failed: ${apiResponse.status}`);
+                var errData = {};
+                try {
+                    errData = await apiResponse.json();
+                } catch (_) {}
+                var errMsg = (window.api && typeof window.api.formatValidationError === 'function')
+                    ? window.api.formatValidationError(errData.detail)
+                    : null;
+                if (!errMsg && typeof errData.detail === 'string') errMsg = errData.detail;
+                if (!errMsg && errData.message) errMsg = errData.message;
+                throw new Error(errMsg || ('API request failed: ' + apiResponse.status));
             }
             response = await apiResponse.json();
         }
@@ -1404,7 +1421,7 @@ async function saveRowAG(tripId) {
         utils.showToast('Trip saved successfully', 'success');
     } catch (error) {
         console.error('Error saving trip:', error);
-        utils.showToast('Error saving trip', 'error');
+        utils.showToast(error.message || 'Error saving trip', 'error');
     }
 }
 
@@ -1446,7 +1463,7 @@ async function deleteRowAG(tripId) {
             utils.showToast('Trip deleted successfully', 'success');
         } catch (error) {
             console.error('Error deleting trip:', error);
-            utils.showToast('Error deleting trip', 'error');
+            utils.showToast(error.message || 'Error deleting trip', 'error');
         }
     }
 }

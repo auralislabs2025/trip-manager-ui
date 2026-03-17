@@ -30,6 +30,25 @@ function getAuthHeaders() {
     return headers;
 }
 
+// Format FastAPI validation error detail for display (422 responses)
+function formatValidationError(detail) {
+    if (detail == null) return null;
+    if (typeof detail === 'string') return detail;
+    if (Array.isArray(detail)) {
+        return detail.map(function (item) {
+            var loc = item.loc;
+            var msg = item.msg || '';
+            if (loc && Array.isArray(loc) && loc.length > 1) {
+                var field = loc[loc.length - 1];
+                return field + ': ' + msg;
+            }
+            return msg;
+        }).join('. ');
+    }
+    if (typeof detail === 'object' && detail.message) return detail.message;
+    return null;
+}
+
 // Make authenticated API request
 async function apiRequest(endpoint, options = {}) {
     const baseUrl = getApiBaseUrl();
@@ -65,9 +84,11 @@ async function apiRequest(endpoint, options = {}) {
             if (response.status === 401 && typeof auth !== 'undefined' && typeof auth.logout === 'function') {
                 auth.logout();
             }
+            var errorMsg = formatValidationError(data.detail) || data.detail || data.message || ('HTTP ' + response.status);
+            if (typeof errorMsg !== 'string') errorMsg = JSON.stringify(errorMsg);
             return {
                 success: false,
-                error: data.detail || data.message || `HTTP ${response.status}`,
+                error: errorMsg,
                 status: response.status,
                 data: data
             };
@@ -118,6 +139,7 @@ window.api = {
     delete: api.delete,
     patch: api.patch,
     getAuthToken,
-    getApiBaseUrl
+    getApiBaseUrl,
+    formatValidationError: formatValidationError
 };
 
