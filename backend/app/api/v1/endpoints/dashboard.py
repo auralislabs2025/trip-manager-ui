@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
-from app.api.deps import get_db, get_current_user
+from app.api.deps import get_db
 from app.models.trip import Trip
 
 router = APIRouter()
@@ -29,7 +29,7 @@ def _month_start(dt: datetime) -> datetime:
 
 
 @router.get("/metrics")
-def get_dashboard_metrics(db: Session = Depends(get_db), user_id: str = Depends(get_current_user)):
+def get_dashboard_metrics(db: Session = Depends(get_db)):
     now = datetime.utcnow()
     month_start, month_end = _month_bounds(now)
     year_start, year_end = _year_bounds(now)
@@ -63,7 +63,7 @@ def get_dashboard_metrics(db: Session = Depends(get_db), user_id: str = Depends(
 
 
 @router.get("/monthly-profit-trend")
-def get_monthly_profit_trend(db: Session = Depends(get_db), months: int = 12, user_id: str = Depends(get_current_user)):
+def get_monthly_profit_trend(db: Session = Depends(get_db), months: int = 12):
     now = datetime.utcnow()
     months = max(1, min(months, 24))
 

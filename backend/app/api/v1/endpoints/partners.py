@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 from typing import Optional
-from app.api.deps import get_db, get_current_user
+from app.api.deps import get_db
 from app.schemas.partner import PartnerCreate, PartnerResponse, PartnerUpdate
 from app.repositories.partner_repo import (
     get_partners,
@@ -16,8 +16,7 @@ router = APIRouter()
 @router.get("/", response_model=list[PartnerResponse])
 def get_all_partners(
     search: Optional[str] = None,
-    db = Depends(get_db),
-    user_id: str = Depends(get_current_user)
+    db = Depends(get_db)
 ):
     partners = get_partners(db, search=search)
     return partners
@@ -26,8 +25,7 @@ def get_all_partners(
 @router.post("/", response_model=PartnerResponse)
 def create_partner_endpoint(
     partner: PartnerCreate,
-    db = Depends(get_db),
-    user_id: str = Depends(get_current_user)
+    db = Depends(get_db)
 ):
     new_partner = create_partner(db, partner)
     return new_partner
@@ -36,8 +34,7 @@ def create_partner_endpoint(
 @router.get("/{partner_id}", response_model=PartnerResponse)
 def get_partner_by_id(
     partner_id: str,
-    db = Depends(get_db),
-    user_id: str = Depends(get_current_user)
+    db = Depends(get_db)
 ):
     partner = get_partner(db, partner_id)
     return partner
@@ -46,8 +43,7 @@ def get_partner_by_id(
 @router.delete("/{partner_id}")
 def delete_partner_by_id(
     partner_id: str,
-    db = Depends(get_db),
-    user_id: str = Depends(get_current_user)
+    db = Depends(get_db)
 ):
    return delete_partner(db, partner_id)
 
@@ -56,8 +52,7 @@ def delete_partner_by_id(
 def update_partner_by_id(
     partner_id: str,
     partner: PartnerUpdate,
-    db = Depends(get_db),
-    user_id: str = Depends(get_current_user)
+    db = Depends(get_db)
 ):
     updated_partner = update_partner(db, partner_id, partner)
     return updated_partner

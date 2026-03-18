@@ -4,14 +4,7 @@
 const MastersAPI = {
     baseURL: window.config?.API_BASE_URL || 'http://localhost:8000/api/v1',
     
-    _getAuthHeaders() {
-        const headers = { 'Content-Type': 'application/json' };
-        const session = typeof storage !== 'undefined' && storage.SessionStorage ? storage.SessionStorage.get() : null;
-        const token = session?.access_token;
-        if (token) headers['Authorization'] = 'Bearer ' + token;
-        return headers;
-    },
-
+    // Generic CRUD operations
     async getAll(entity, params = {}) {
         const queryParams = new URLSearchParams();
     
@@ -24,9 +17,8 @@ const MastersAPI = {
         const query = queryParams.toString();
         const url = `${this.baseURL}/masters/${entity}/${query ? `?${query}` : ''}`;
     
-        const response = await fetch(url, { headers: this._getAuthHeaders() });
+        const response = await fetch(url);
         if (!response.ok) {
-            if (response.status === 401 && typeof auth !== 'undefined') auth.logout();
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         return response.json();
@@ -36,11 +28,8 @@ const MastersAPI = {
     async getById(entity, id) {
         const url = `${this.baseURL}/masters/${entity}/${id}`;
         try {
-            const response = await fetch(url, { headers: this._getAuthHeaders() });
-            if (!response.ok) {
-                if (response.status === 401 && typeof auth !== 'undefined') auth.logout();
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             return await response.json();
         } catch (error) {
             console.error(`Error fetching ${entity} by id:`, error);
@@ -53,12 +42,13 @@ const MastersAPI = {
     
         const response = await fetch(url, {
             method: 'POST',
-            headers: this._getAuthHeaders(),
+            headers: {
+                'Content-Type': 'application/json',
+            },
             body: JSON.stringify(data)
         });
     
         if (!response.ok) {
-            if (response.status === 401 && typeof auth !== 'undefined') auth.logout();
             const error = await response.json();
             throw new Error(error.detail || `HTTP error! status: ${response.status}`);
         }
@@ -71,11 +61,12 @@ const MastersAPI = {
         try {
             const response = await fetch(url, {
                 method: 'PUT',
-                headers: this._getAuthHeaders(),
+                headers: {
+                    'Content-Type': 'application/json',
+                },
                 body: JSON.stringify(data)
             });
             if (!response.ok) {
-                if (response.status === 401 && typeof auth !== 'undefined') auth.logout();
                 const error = await response.json();
                 throw new Error(error.detail || `HTTP error! status: ${response.status}`);
             }
@@ -90,11 +81,9 @@ const MastersAPI = {
         const url = `${this.baseURL}/masters/${entity}/${id}`;
         try {
             const response = await fetch(url, {
-                method: 'DELETE',
-                headers: this._getAuthHeaders()
+                method: 'DELETE'
             });
             if (!response.ok) {
-                if (response.status === 401 && typeof auth !== 'undefined') auth.logout();
                 const error = await response.json();
                 throw new Error(error.detail || `HTTP error! status: ${response.status}`);
             }
@@ -108,11 +97,8 @@ const MastersAPI = {
     async getActive(entity) {
         const url = `${this.baseURL}/masters/${entity}/active`;
         try {
-            const response = await fetch(url, { headers: this._getAuthHeaders() });
-            if (!response.ok) {
-                if (response.status === 401 && typeof auth !== 'undefined') auth.logout();
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             return await response.json();
         } catch (error) {
             console.error(`Error fetching active ${entity}:`, error);

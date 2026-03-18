@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 from typing import Optional
-from app.api.deps import get_db, get_current_user
+from app.api.deps import get_db
 from app.schemas.item import ItemCreate, ItemResponse, ItemUpdate
 from app.repositories.item_repo import (
     get_items,
@@ -16,8 +16,7 @@ router = APIRouter()
 @router.get("/", response_model=list[ItemResponse])
 def get_all_items(
     search: Optional[str] = None,
-    db = Depends(get_db),
-    user_id: str = Depends(get_current_user)
+    db = Depends(get_db)
 ):
     items = get_items(db, search=search)
     return items
@@ -26,8 +25,7 @@ def get_all_items(
 @router.post("/", response_model=ItemResponse)
 def create_item_endpoint(
     item: ItemCreate,
-    db = Depends(get_db),
-    user_id: str = Depends(get_current_user)
+    db = Depends(get_db)
 ):
     new_item = create_item(db, item)
     return new_item
@@ -36,8 +34,7 @@ def create_item_endpoint(
 @router.get("/{item_id}", response_model=ItemResponse)
 def get_item_by_id(
     item_id: str,
-    db = Depends(get_db),
-    user_id: str = Depends(get_current_user)
+    db = Depends(get_db)
 ):
     item = get_item(db, item_id)
     return item
@@ -46,8 +43,7 @@ def get_item_by_id(
 @router.delete("/{item_id}")
 def delete_item_by_id(
     item_id: str,
-    db = Depends(get_db),
-    user_id: str = Depends(get_current_user)
+    db = Depends(get_db)
 ):
    return delete_item(db, item_id)
 
@@ -56,8 +52,7 @@ def delete_item_by_id(
 def update_item_by_id(
     item_id: str,
     item: ItemUpdate,
-    db = Depends(get_db),
-    user_id: str = Depends(get_current_user)
+    db = Depends(get_db)
 ):
     updated_item = update_item(db, item_id, item)
     return updated_item
