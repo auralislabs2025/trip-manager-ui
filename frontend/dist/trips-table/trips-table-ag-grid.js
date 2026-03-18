@@ -1905,13 +1905,12 @@ function openExpenseBreakdown(tripId) {
                     <div class="expense-breakdown-item">
                         <div class="expense-breakdown-row">
                             <label>${expense} (₹)</label>
-                            <input type="number" 
+                            <input type="text" 
+                                   inputmode="decimal"
                                    class="input expense-amount-input" 
                                    id="expense_${expenseKey}" 
                                    value="${value}" 
-                                   min="0" 
-                                   step="0.01"
-                                   oninput="updateExpenseBreakdownTotal()"
+                                   oninput="this.value=this.value.replace(/[^0-9.]/g,'');updateExpenseBreakdownTotal()"
                                    placeholder="Enter ₹ amount">
                         </div>
                         <div class="expense-breakdown-notes">
@@ -1937,7 +1936,7 @@ function updateExpenseBreakdownTotal() {
     
     if (!form || !totalEl) return;
     
-    const inputs = form.querySelectorAll('input[type="number"]');
+    const inputs = form.querySelectorAll('.expense-amount-input');
     let total = 0;
     
     inputs.forEach(input => {
@@ -1960,7 +1959,7 @@ function saveExpenseBreakdown() {
     const form = document.getElementById('expenseBreakdownForm');
     if (!form) return;
     
-    const amountInputs = form.querySelectorAll('input[type="number"]');
+    const amountInputs = form.querySelectorAll('.expense-amount-input');
     const expenses = {};
     let total = 0;
     
