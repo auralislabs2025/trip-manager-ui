@@ -135,7 +135,7 @@ def _trip_with_expenses(db: Session, trip_id: str):
     ).filter(Trip.id == trip_id).first()
 
 
-@router.post("/", response_model=TripResponse)
+@router.post("/", response_model=Dict[str, Any])
 async def create_trip(trip: TripCreate, db: Optional[Session] = Depends(get_db), user_id: str = Depends(get_current_user)):
     """
     Create a new trip
@@ -150,7 +150,7 @@ async def create_trip(trip: TripCreate, db: Optional[Session] = Depends(get_db),
         raise HTTPException(status_code=500, detail=f"Error creating trip: {str(e)}")
 
 
-@router.put("/{trip_id}", response_model=TripResponse)
+@router.put("/{trip_id}", response_model=Dict[str, Any])
 def update_trip(
     trip_id: str,
     trip: TripUpdate,

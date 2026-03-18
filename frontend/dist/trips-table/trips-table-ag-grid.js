@@ -1353,6 +1353,11 @@ async function saveRowAG(tripId) {
     }
     
     // Prepare trip data for saving
+    // Only include expense_items if they contain at least one non-zero amount,
+    // otherwise omit so the backend preserves existing expenses.
+    const rawExpenseItems = trip.expense_items || [];
+    const hasExpenseData = rawExpenseItems.some(item => (parseFloat(item.amount) || 0) > 0);
+
     const payload = {
         trip_start_date: trip.tripStartDate,
         estimated_end_date: trip.estimatedEndDate || null,
@@ -1361,18 +1366,20 @@ async function saveRowAG(tripId) {
         partner_id: trip.partnerId || masterData.partnerNameToId[normalizeMasterName(trip.partner)] || null,
         purchase_place_id: trip.purchasePlaceId || masterData.purchasePlaceNameToId[normalizeMasterName(trip.purchasePlace)] || null,
         item_id: trip.itemId || masterData.itemNameToId[normalizeMasterName(trip.itemName)] || null,
-        expense_items: trip.expense_items || [],
         starting_km: parseFloat(trip.startingKm) || 0,
         ending_km: parseFloat(trip.closingKm) || 0,
         tonnage: parseFloat(trip.tonnage) || 0,
         rate_per_ton: parseFloat(trip.ratePerTon) || 0,
         amount_given_to_driver: parseFloat(trip.amountGivenToDriver) || 0,
-        expenses: trip.expenses || {},
         total_expenses: parseFloat(trip.totalExpenses) || 0,
         revenue: parseFloat(trip.revenue) || 0,
         profit: parseFloat(trip.profit) || 0,
         status: 'closed'
     };
+    if (hasExpenseData) {
+        payload.expense_items = rawExpenseItems;
+        payload.expenses = trip.expenses || {};
+    }
     
     try {
         let response;
@@ -1895,18 +1902,22 @@ function openExpenseBreakdown(tripId) {
 
             const expenses = trip.expenses || {};
             const expenseItems = trip.expense_items || trip.expenseItems || [];
+            // Build amount and notes lookups from expense_items as reliable source
+            const amountsByExpense = {};
             const notesByExpense = {};
             expenseItems.forEach(item => {
                 const name = item.expense_name || item.expenseName;
                 if (name) {
                     const key = expenseKeyFromName(name);
+                    amountsByExpense[key] = parseFloat(item.amount) || 0;
                     notesByExpense[key] = (item.notes !== undefined && item.notes !== null) ? String(item.notes) : '';
                 }
             });
             const escapeAttr = (s) => String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
             form.innerHTML = expenseTypes.map(expense => {
                 const expenseKey = expenseKeyFromName(expense);
-                const rawValue = expenses[expenseKey] || 0;
+                // Prefer expense_items amount, fall back to expenses map
+                const rawValue = amountsByExpense[expenseKey] ?? expenses[expenseKey] ?? 0;
                 const value = (rawValue === 0 || rawValue === '0') ? '' : rawValue;
                 const notes = notesByExpense[expenseKey] || '';
                 return `
