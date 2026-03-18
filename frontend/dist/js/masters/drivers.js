@@ -210,9 +210,7 @@ async function saveDriver() {
         name: [
             (v) => MastersValidation.required(v, 'Name')
         ],
-        license_number: [
-            (v) => MastersValidation.required(v, 'License Number')
-        ],
+        license_number: [],
         phone: [
             (v) => v ? MastersValidation.phone(v) : null
         ]
