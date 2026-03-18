@@ -1912,7 +1912,7 @@ function openExpenseBreakdown(tripId) {
                                    min="0" 
                                    step="0.01"
                                    oninput="updateExpenseBreakdownTotal()"
-                                   placeholder="">
+                                   placeholder="Enter ₹ amount">
                         </div>
                         <div class="expense-breakdown-notes">
                             <label for="notes_${expenseKey}">Notes</label>

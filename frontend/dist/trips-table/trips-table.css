@@ -706,6 +706,23 @@
 .expense-breakdown-row input {
     width: 150px;
     text-align: right;
+    border: 2px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 1rem;
+    font-weight: 600;
+    background: #f8fafc;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+.expense-breakdown-row input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    background: #fff;
+    outline: none;
+}
+.expense-breakdown-row input::placeholder {
+    color: #94a3b8;
+    font-weight: 400;
 }
 
 /* Hide number input spinner/stepper in expense modal */
