@@ -23,7 +23,8 @@ def list_trips(
     search: Optional[str] = None,
     start_date_from: Optional[str] = None,
     start_date_to: Optional[str] = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user)
 ):
     trip_repo = TripRepository(db)
     return trip_repo.get_all(
@@ -36,7 +37,7 @@ def list_trips(
 
 
 @router.get("/masters", response_model=Dict[str, List[Dict[str, Any]]])
-async def get_trip_masters(db = Depends(get_db)):
+async def get_trip_masters(db = Depends(get_db), user_id: str = Depends(get_current_user)):
     """
     Get master data needed for trip dropdowns (drivers, vehicles, items, purchase places, partners).
     """
@@ -111,7 +112,7 @@ async def get_trip_masters(db = Depends(get_db)):
 
 
 @router.get("/{trip_id}", response_model=Dict[str, Any])
-async def get_trip_by_id(trip_id: str, db: Optional[Session] = Depends(get_db)):
+async def get_trip_by_id(trip_id: str, db: Optional[Session] = Depends(get_db), user_id: str = Depends(get_current_user)):
     """
     Get a specific trip by ID. Returns serialized trip with expense_items (including notes).
     """
@@ -167,7 +168,7 @@ def update_trip(
 
 
 @router.delete("/{trip_id}")
-async def delete_trip(trip_id: str, db: Optional[Session] = Depends(get_db)):
+async def delete_trip(trip_id: str, db: Optional[Session] = Depends(get_db), user_id: str = Depends(get_current_user)):
     """
     Delete a trip
     """

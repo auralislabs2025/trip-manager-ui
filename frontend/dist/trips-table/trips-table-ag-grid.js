@@ -30,6 +30,10 @@ let lastTripsQuery = null;
 
 // Initialize AG Grid
 function initTripsTableAGGrid() {
+    if (typeof auth !== 'undefined' && typeof auth.protectRoute === 'function') {
+        if (!auth.protectRoute()) return;
+    }
+    
     // Check if AG Grid is loaded
     if (typeof agGrid === 'undefined') {
         console.error('AG Grid is not loaded. Please check the CDN link.');
@@ -231,7 +235,9 @@ async function loadExpenseMaster() {
             }
             data = response.data;
         } else {
-            const response = await fetch(expensesUrl);
+            const token = typeof storage !== 'undefined' && storage.SessionStorage ? storage.SessionStorage.get()?.access_token : null;
+            const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
+            const response = await fetch(expensesUrl, { headers });
             if (!response.ok) {
                 throw new Error(`Failed to load expenses: ${response.status}`);
             }
@@ -381,7 +387,9 @@ async function loadMasterData() {
             }
             data = response.data;
         } else {
-            const response = await fetch(mastersUrl);
+            const token = typeof storage !== 'undefined' && storage.SessionStorage ? storage.SessionStorage.get()?.access_token : null;
+            const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
+            const response = await fetch(mastersUrl, { headers });
             if (!response.ok) {
                 throw new Error(`Failed to load masters: ${response.status}`);
             }
