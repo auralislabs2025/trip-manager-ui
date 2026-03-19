@@ -834,13 +834,13 @@ function getColumnDefs() {
             cellEditor: 'agNumberCellEditor',
             cellEditorParams: {
                 min: 0,
-                step: 0.01,
-                precision: 4
+                step: 0.001,
+                precision: 3
             },
             valueFormatter: (params) => {
                 if (params.value === null || params.value === undefined || params.value === '') return '';
                 const n = parseFloat(params.value);
-                return isNaN(n) ? '' : Number(n).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 4 });
+                return isNaN(n) ? '' : Number(n).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 3 });
             },
             onCellValueChanged: (params) => {
                 updateCalculatedFields(params.data);
