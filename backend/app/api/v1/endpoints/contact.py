@@ -1,5 +1,8 @@
 import httpx
 import logging
+import smtplib
+from email.message import EmailMessage
+import anyio
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, EmailStr
@@ -112,10 +115,40 @@ async def _send_email(to: str, subject: str, html: str, reply_to: str = None):
         return resp.json()
 
 
+def _send_email_smtp(to: str, subject: str, html: str, reply_to: str = None):
+    if not settings.SMTP_HOST or not settings.SMTP_USER or not settings.SMTP_PASSWORD:
+        raise Exception("SMTP is not configured (SMTP_HOST/SMTP_USER/SMTP_PASSWORD missing)")
+
+    from_email = settings.SMTP_FROM_EMAIL or settings.SMTP_USER
+    from_name = settings.SMTP_FROM_NAME or "auralislabs"
+
+    msg = EmailMessage()
+    msg["From"] = f"{from_name} <{from_email}>"
+    msg["To"] = to
+    msg["Subject"] = subject
+    if reply_to:
+        msg["Reply-To"] = reply_to
+    msg.set_content("This email contains HTML content. If you cannot view it, please check your email client.")
+    msg.add_alternative(html, subtype="html")
+
+    port = settings.SMTP_PORT or 587
+    use_tls = port == 587
+
+    with smtplib.SMTP(settings.SMTP_HOST, port) as server:
+        server.ehlo()
+        if use_tls:
+            server.starttls()
+            server.ehlo()
+        server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
+        server.send_message(msg)
+
+
 @router.post("", response_model=ContactResponse)
 async def send_contact_email(data: ContactRequest):
-    if not settings.RESEND_API_KEY:
-        logger.error("RESEND_API_KEY not configured")
+    resend_enabled = bool(settings.RESEND_API_KEY)
+    smtp_enabled = bool(settings.SMTP_HOST and settings.SMTP_USER and settings.SMTP_PASSWORD)
+    if not resend_enabled and not smtp_enabled:
+        logger.error("Mail service not configured: provide RESEND_API_KEY or SMTP_* settings")
         raise HTTPException(status_code=500, detail="Mail service not configured")
 
     name = data.name.strip()
@@ -126,20 +159,37 @@ async def send_contact_email(data: ContactRequest):
         raise HTTPException(status_code=422, detail="Name and message are required")
 
     try:
-        await _send_email(
-            to=RECIPIENT,
-            subject=f"New Contact Form: {name}",
-            html=_build_notification_html(name, email, message),
-            reply_to=email,
-        )
+        if resend_enabled:
+            await _send_email(
+                to=RECIPIENT,
+                subject=f"New Contact Form: {name}",
+                html=_build_notification_html(name, email, message),
+                reply_to=email,
+            )
+        else:
+            await anyio.to_thread.run_sync(
+                _send_email_smtp,
+                to=RECIPIENT,
+                subject=f"New Contact Form: {name}",
+                html=_build_notification_html(name, email, message),
+                reply_to=email,
+            )
         logger.info(f"Contact email sent from {email} ({name})")
 
         try:
-            await _send_email(
-                to=email,
-                subject="Thank you for contacting auralislabs.",
-                html=_build_thankyou_html(name),
-            )
+            if resend_enabled:
+                await _send_email(
+                    to=email,
+                    subject="Thank you for contacting auralislabs.",
+                    html=_build_thankyou_html(name),
+                )
+            else:
+                await anyio.to_thread.run_sync(
+                    _send_email_smtp,
+                    to=email,
+                    subject="Thank you for contacting auralislabs.",
+                    html=_build_thankyou_html(name),
+                )
             logger.info(f"Thank-you email sent to {email}")
         except Exception as e:
             logger.warning(f"Thank-you email failed for {email}: {e}")
