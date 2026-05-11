@@ -1,5 +1,7 @@
-from pydantic_settings import BaseSettings
 from typing import Optional
+
+from pydantic import Field
+from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     # App
@@ -23,6 +25,20 @@ class Settings(BaseSettings):
 
     # Resend (for contact form emails)
     RESEND_API_KEY: Optional[str] = None
+
+    # SMTP fallback (used when RESEND_API_KEY is not set)
+    SMTP_HOST: Optional[str] = None
+    SMTP_PORT: Optional[int] = 587
+    SMTP_USER: Optional[str] = Field(
+        default=None,
+        validation_alias="SMTP_EMAIL",  # backward compat with older env naming
+    )
+    SMTP_PASSWORD: Optional[str] = Field(
+        default=None,
+        validation_alias="SMTP_APP_PASSWORD",  # backward compat with older env naming
+    )
+    SMTP_FROM_EMAIL: Optional[str] = None
+    SMTP_FROM_NAME: Optional[str] = None
     
     @property
     def DATABASE_URL(self) -> str:
@@ -32,7 +48,6 @@ class Settings(BaseSettings):
         env_file = ".env"
         env_prefix = "TRIP_TRACKER_"
         env_file_encoding = "utf-8"
-        extra = "ignore"
         extra = "ignore"
     @property
     def is_production(self) -> bool:
