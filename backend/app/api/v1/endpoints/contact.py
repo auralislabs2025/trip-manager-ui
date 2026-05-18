@@ -151,7 +151,7 @@ async def send_contact_email(data: ContactRequest):
     smtp_enabled = bool(settings.SMTP_HOST and settings.SMTP_USER and settings.SMTP_PASSWORD)
     if not resend_enabled and not smtp_enabled:
         logger.error("Mail service not configured: provide RESEND_API_KEY or SMTP_* settings")
-        raise HTTPException(status_code=500, detail="Mail service not configured")
+        raise HTTPException(status_code=500, detail="Mail service not configured test that")
 
     name = data.name.strip()
     email = data.email.strip()
