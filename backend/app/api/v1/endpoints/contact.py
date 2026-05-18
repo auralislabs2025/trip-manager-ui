@@ -146,6 +146,8 @@ def _send_email_smtp(to: str, subject: str, html: str, reply_to: str = None):
 @router.post("", response_model=ContactResponse)
 async def send_contact_email(data: ContactRequest):
     resend_enabled = bool(settings.RESEND_API_KEY)
+    if not resend_enabled:
+      raise HTTPException(status_code=500, detail="resend service not configured")
     smtp_enabled = bool(settings.SMTP_HOST and settings.SMTP_USER and settings.SMTP_PASSWORD)
     if not resend_enabled and not smtp_enabled:
         logger.error("Mail service not configured: provide RESEND_API_KEY or SMTP_* settings")
